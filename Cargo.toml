@@ -6,3 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bevy = "0.13.2"
+bevy-inspector-egui = "0.23.4"
+bevy_ecs_ldtk = { git = "https://github.com/theshortcut/bevy_ecs_ldtk/", branch = "bevy-0.13" }
+[patch.crates-io]
+bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap" }
+
