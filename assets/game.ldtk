@@ -1610,20 +1610,6 @@
 							"defUid": 43,
 							"px": [432,160],
 							"fieldInstances": []
-						},
-						{
-							"__identifier": "Stairs",
-							"__grid": [15,34],
-							"__pivot": [0,0],
-							"__tags": [],
-							"__tile": { "tilesetUid": 1, "x": 416, "y": 256, "w": 16, "h": 16 },
-							"__smartColor": "#BE4A2F",
-							"iid": "96f13310-d7b0-11ee-8b66-c355a521faf4",
-							"width": 16,
-							"height": 16,
-							"defUid": 28,
-							"px": [246,550],
-							"fieldInstances": []
 						}
 					]
 				},

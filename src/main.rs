@@ -71,7 +71,7 @@ fn main() {
         )
         .register_ldtk_entity::<PlayerBundle>("Player")
         .register_ldtk_entity::<StairsBundle>("Stairs")
-        .insert_resource(LevelSelection::index(0))
+        .insert_resource(LevelSelection::index(1))
         .register_ldtk_int_cell::<WallBundle>(1)
         .init_resource::<LevelWalls>()
         .add_plugins(WorldInspectorPlugin::new())
@@ -157,6 +157,7 @@ fn cache_wall_locations(
 
 fn check_stairs(
     players: Query<&GridCoords, (With<Player>, Changed<GridCoords>)>,
+    level_selection: ResMut<LevelSelection>,
     stair: Query<&GridCoords, With<Stair>>,
 ) {
     if players
@@ -164,6 +165,11 @@ fn check_stairs(
         .zip(stair.iter())
         .any(|(player_grid_coords, stairs_grid_coords)| player_grid_coords == stairs_grid_coords)
     {
-        info!("Player reached stairs!");
+        let indices = match level_selection.into_inner() {
+            LevelSelection::Indices(indices) => indices,
+            _ => panic!("level selection should always be Indices in this game"),
+        };
+
+        indices.level += 1;
     }
 }
