@@ -1,5 +1,6 @@
 use bevy::app::FixedMain;
 use bevy::prelude::*;
+use bevy::time::common_conditions::on_timer;
 use bevy_ecs_ldtk::prelude::*;
 
 use crate::assets::{LevelWalls, Player, Stair, Wall};
@@ -21,7 +22,7 @@ impl Plugin for MovementPlugin {
         )
         .add_systems(
             FixedMain,
-            (move_player_from_input).in_set(GameplaySet::InputSet),
+            (move_player_from_input.run_if(on_timer(std::time::Duration::from_millis(100)))).in_set(GameplaySet::InputSet),
         );
     }
 }
