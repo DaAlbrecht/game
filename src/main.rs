@@ -3,8 +3,8 @@ use bevy_ecs_ldtk::prelude::*;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use game::{
-    assets::AssetPlugin, camera::CameraPlugin, movement::MovementPlugin, patch_camera, setup,
-    AppState,
+    assets::AssetPlugin, camera::CameraPlugin, movement::MovementPlugin, patch_camera,
+    player::PlayerPlugin, setup, AppState,
 };
 use iyes_perf_ui::{diagnostics::PerfUiEntryFPS, PerfUiPlugin, PerfUiRoot};
 
@@ -18,6 +18,7 @@ fn main() {
         .add_plugins(CameraPlugin {
             state: AppState::InGame,
         })
+        .add_plugins(PlayerPlugin)
         .add_systems(Startup, setup)
         .add_systems(OnExit(AppState::Loading), patch_camera);
 

@@ -1,10 +1,11 @@
-use assets::Player;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use camera::MainCamera;
+use player::Player;
 pub mod assets;
 pub mod camera;
 pub mod movement;
+pub mod player;
 
 pub const GRID_SIZE: i32 = 16;
 

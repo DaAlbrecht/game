@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
-use crate::{assets::Player, GRID_SIZE};
+use crate::{player::Player, GRID_SIZE};
 
 pub struct CameraPlugin<S: States> {
     pub state: S,

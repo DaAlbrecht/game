@@ -1,10 +1,9 @@
-use bevy::app::FixedMain;
 use bevy::prelude::*;
-use bevy::time::common_conditions::on_timer;
 use bevy_ecs_ldtk::prelude::*;
 
-use crate::assets::{LevelWalls, Player, Stair, Wall};
+use crate::assets::{LevelWalls, Stair, Wall};
 use crate::camera::MainCamera;
+use crate::player::Player;
 use crate::{GameplaySet, GRID_SIZE};
 
 pub struct MovementPlugin;
@@ -19,36 +18,7 @@ impl Plugin for MovementPlugin {
                 check_stairs,
             )
                 .in_set(GameplaySet::InputSet),
-        )
-        .add_systems(
-            FixedMain,
-            (move_player_from_input.run_if(on_timer(std::time::Duration::from_millis(100)))).in_set(GameplaySet::InputSet),
         );
-    }
-}
-
-fn move_player_from_input(
-    mut players: Query<&mut GridCoords, With<Player>>,
-    input: Res<ButtonInput<KeyCode>>,
-    level_walls: Res<LevelWalls>,
-) {
-    let movement_direction = if input.pressed(KeyCode::KeyW) {
-        GridCoords::new(0, 1)
-    } else if input.pressed(KeyCode::KeyA) {
-        GridCoords::new(-1, 0)
-    } else if input.pressed(KeyCode::KeyS) {
-        GridCoords::new(0, -1)
-    } else if input.pressed(KeyCode::KeyD) {
-        GridCoords::new(1, 0)
-    } else {
-        return;
-    };
-
-    for mut player_grid_coords in players.iter_mut() {
-        let destination = *player_grid_coords + movement_direction;
-        if !level_walls.in_wall(&destination) {
-            *player_grid_coords = destination;
-        }
     }
 }
 
