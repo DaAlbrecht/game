@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
+
 use std::collections::HashSet;
+
+use crate::player::Player;
 
 pub struct AssetPlugin;
 
@@ -14,9 +17,6 @@ impl Plugin for AssetPlugin {
             .init_resource::<LevelWalls>();
     }
 }
-
-#[derive(Default, Component)]
-pub struct Player;
 
 #[derive(Default, Component)]
 pub struct Stair;
