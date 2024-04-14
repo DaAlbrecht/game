@@ -1432,25 +1432,6 @@
 				"opaqueTiles": "00000000000000000000000000000",
 				"averageColors": "5573000055830000569400007473000064730000547200005eee000074730000757300006eee0000689809a9189819b9005217a7000000520000"
 			}
-		},
-		{
-			"__cWid": 0,
-			"__cHei": 0,
-			"identifier": "Tileset",
-			"uid": 44,
-			"relPath": null,
-			"embedAtlas": null,
-			"pxWid": 0,
-			"pxHei": 0,
-			"tileGridSize": 16,
-			"spacing": 0,
-			"padding": 0,
-			"tags": [],
-			"tagsSourceEnumUid": null,
-			"enumTags": [],
-			"customData": [],
-			"savedSelections": [],
-			"cachedPixelData": null
 		}
 	], "enums": [], "externalEnums": [], "levelFields": [] },
 	"levels": [
