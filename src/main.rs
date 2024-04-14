@@ -3,16 +3,14 @@ use bevy_ecs_ldtk::prelude::*;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use game::{
-    assets::{AssetPlugin, Player},
-    camera::CameraPlugin,
-    movement::MovementPlugin,
-    patch_camera, setup, AppState,
+    assets::AssetPlugin, camera::CameraPlugin, movement::MovementPlugin, patch_camera, setup,
+    AppState,
 };
 use iyes_perf_ui::{diagnostics::PerfUiEntryFPS, PerfUiPlugin, PerfUiRoot};
 
 fn main() {
     let mut app = App::new();
-    app.insert_state(AppState::Loading)
+    app.init_state::<AppState>()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins(LdtkPlugin)
         .add_plugins(AssetPlugin)
@@ -21,15 +19,13 @@ fn main() {
             state: AppState::InGame,
         })
         .add_systems(Startup, setup)
-        .add_systems(
-            PostUpdate,
-            patch_camera.run_if(any_with_component::<Player>.and_then(run_once())),
-        );
+        .add_systems(OnExit(AppState::Loading), patch_camera);
 
     if cfg!(debug_assertions) {
         app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
             .add_plugins(PerfUiPlugin)
             .add_plugins(WorldInspectorPlugin::default())
+            //.add_systems(Last, print_resources)
             .add_systems(Startup, debug_plugins);
     }
     app.run();
@@ -37,4 +33,20 @@ fn main() {
 
 fn debug_plugins(mut commands: Commands) {
     commands.spawn((PerfUiRoot::default(), PerfUiEntryFPS::default()));
+}
+
+fn print_resources(world: &World) {
+    let components = world.components();
+
+    let mut r: Vec<_> = world
+        .storages()
+        .resources
+        .iter()
+        .map(|(id, _)| components.get_info(id).unwrap())
+        .map(|info| info.name())
+        .collect();
+
+    // sort list alphebetically
+    r.sort();
+    r.iter().for_each(|name| println!("{}", name));
 }

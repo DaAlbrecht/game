@@ -13,8 +13,9 @@ pub(crate) enum GameplaySet {
     InputSet,
 }
 
-#[derive(States, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum AppState {
+    #[default]
     Loading,
     InGame,
 }

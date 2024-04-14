@@ -1,31 +1,36 @@
 use bevy::prelude::*;
-use bevy_ecs_ldtk::prelude::*;
+use bevy_asset_loader::loading_state::{
+    config::ConfigureLoadingState, LoadingState, LoadingStateAppExt,
+};
 use bevy_asset_loader::prelude::*;
-use bevy_asset_loader::loading_state::{config::ConfigureLoadingState, LoadingState, LoadingStateAppExt};
+use bevy_ecs_ldtk::prelude::*;
 
-use std::collections::HashSet;
 use crate::AppState;
-
+use std::collections::HashSet;
 
 pub struct AssetPlugin;
 
 impl Plugin for AssetPlugin {
     fn build(&self, app: &mut App) {
         app.register_ldtk_entity::<PlayerBundle>("Player")
-            .add_loading_state(LoadingState::new(AppState::Loading).continue_to_state(AppState::InGame).load_collection::<Playeranimation>())      
-            .add_systems(OnEnter(AppState::InGame),patch_player)
-            .add_systems(Update, update_player_animation.run_if(in_state(AppState::InGame)),)
+            .add_loading_state(
+                LoadingState::new(AppState::Loading)
+                    .continue_to_state(AppState::InGame)
+                    .load_collection::<PlayerAnimation>(),
+            )
             .register_ldtk_entity::<StairsBundle>("Stairs")
             .register_ldtk_entity::<StairsBundle>("Enemy")
-            .insert_resource(LevelSelection::index(4))
+            .insert_resource(LevelSelection::index(1))
             .register_ldtk_int_cell::<WallBundle>(1)
-            .init_resource::<LevelWalls>();
+            .init_resource::<LevelWalls>()
+            .add_systems(OnEnter(AppState::InGame), patch_players)
+            .add_systems(Update, update_player_animation);
     }
 }
 
 #[derive(Default, Component)]
 pub struct Player;
-  
+
 #[derive(Default, Component)]
 pub struct Stair;
 
@@ -39,7 +44,7 @@ pub struct Enemy;
 struct PlayerBundle {
     player: Player,
     #[sprite_sheet_bundle]
-    sprite_bundle: SpriteSheetBundle,    
+    sprite_bundle: SpriteSheetBundle,
     #[grid_coords]
     grid_coords: GridCoords,
 }
@@ -91,39 +96,42 @@ pub struct AnimationTimer {
 }
 
 #[derive(AssetCollection, Resource)]
-struct Playeranimation{
-    #[asset(texture_atlas_layout(tile_size_x = 16., tile_size_y = 16., columns = 24, rows = 8, padding_x = 16., padding_y = 8., offset_x = 8., offset_y = 8.))]
+struct PlayerAnimation {
+    #[asset(texture_atlas_layout(
+        tile_size_x = 16.,
+        tile_size_y = 16.,
+        columns = 24,
+        rows = 8,
+        padding_x = 16.,
+        padding_y = 8.,
+        offset_x = 8.,
+        offset_y = 8.
+    ))]
     layout: Handle<TextureAtlasLayout>,
     #[asset(path = "puny_characters/human_worker_red.png")]
     sprite: Handle<Image>,
 }
 
-fn patch_player(
+fn patch_players(
     mut commands: Commands,
-    asset: Res<Playeranimation>,
-    player_query: Query<Entity, With<Player>>,
-){      
-    if let Ok(entity) = player_query.get_single() {
-        /*commands.entity(entity).insert((
-            SpriteSheetBundle{
-                atlas: asset.layout.clone().into(),
-                texture: asset.sprite.clone(),
-                ..default()
-            },
-            AnimationTimer {
-                timer: Timer::from_seconds(1.0, TimerMode::Repeating),
-                frame_count: 2,
-            },
-        ));*/
-    }      
-   
+    asset: Res<PlayerAnimation>,
+    mut player_query: Query<(Entity, &mut TextureAtlas, &mut Handle<Image>), With<Player>>,
+) {
+    for (entity, mut atlas, mut texture) in &mut player_query {
+        atlas.layout = asset.layout.clone();
+        *texture = asset.sprite.clone();
+        commands.entity(entity).insert(AnimationTimer {
+            timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+            frame_count: 2,
+        });
+    }
 }
 
 fn update_player_animation(
     mut sprites: Query<(&mut TextureAtlas, &mut AnimationTimer)>,
-    time: Res<Time>
-){
-    for (mut sprite, mut animation) in &mut sprites{
+    time: Res<Time>,
+) {
+    for (mut sprite, mut animation) in &mut sprites {
         animation.timer.tick(time.delta());
 
         if animation.timer.just_finished() {
@@ -134,4 +142,3 @@ fn update_player_animation(
         }
     }
 }
-
