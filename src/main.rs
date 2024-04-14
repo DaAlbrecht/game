@@ -8,10 +8,11 @@ use game::{
     movement::MovementPlugin,
     patch_camera, setup, AppState,
 };
+use iyes_perf_ui::{diagnostics::PerfUiEntryFPS, PerfUiPlugin, PerfUiRoot};
 
 fn main() {
-    App::new()
-        .insert_state(AppState::Loading)
+    let mut app = App::new();
+    app.insert_state(AppState::Loading)
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins(LdtkPlugin)
         .add_plugins(AssetPlugin)
@@ -20,10 +21,20 @@ fn main() {
             state: AppState::InGame,
         })
         .add_systems(Startup, setup)
-        .add_plugins(WorldInspectorPlugin::new())
         .add_systems(
             PostUpdate,
             patch_camera.run_if(any_with_component::<Player>.and_then(run_once())),
-        )
-        .run();
+        );
+
+    if cfg!(debug_assertions) {
+        app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
+            .add_plugins(PerfUiPlugin)
+            .add_plugins(WorldInspectorPlugin::default())
+            .add_systems(Startup, debug_plugins);
+    }
+    app.run();
+}
+
+fn debug_plugins(mut commands: Commands) {
+    commands.spawn((PerfUiRoot::default(), PerfUiEntryFPS::default()));
 }
