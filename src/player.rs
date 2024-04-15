@@ -1,8 +1,19 @@
-use bevy::{prelude::*, time::common_conditions::on_timer};
+use std::time::Duration;
+
+use bevy::{core::FrameCount, prelude::*, time::common_conditions::on_timer};
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
 use crate::{assets::LevelWalls, AppState, GameplaySet};
+
+const INDEX_IDLE :usize = 0;
+const INDEX_UP : usize = 98;
+const INDEX_LEFT : usize = 146;
+const INDEX_REIGHT : usize = 51;
+const INDEX_DOWN : usize = 3;
+const FRAME_IDLE : usize = 2;
+const FRAME_WALKING : usize = 3;
+
 
 pub struct PlayerPlugin;
 
@@ -30,15 +41,15 @@ impl Plugin for PlayerPlugin {
 #[derive(Default, Component, Reflect)]
 pub struct Player;
 
-#[derive(Default, Component, Reflect)]
-pub enum PlayerWalkingState {
-    #[default]
-    Idle,
-    WalkingLeft,
-    WalkingRight,
-    WalkingUp,
-    WalkingDown,
+#[derive(Component, Reflect)]
+pub enum PlayerWalkingState {    
+    Idle{index: usize, frame_count: usize},
+    WalkingLeft{index: usize, frame_count: usize},
+    WalkingRight{index: usize, frame_count: usize},
+    WalkingUp{index: usize, frame_count: usize},
+    WalkingDown{index: usize, frame_count: usize},
 }
+
 
 #[derive(Component)]
 pub struct AnimationTimer {
@@ -76,7 +87,7 @@ fn patch_players(
                 timer: Timer::from_seconds(1.0, TimerMode::Repeating),
                 frame_count: 2,
             },
-            PlayerWalkingState::default(),
+            PlayerWalkingState::Idle{index: INDEX_IDLE, frame_count:FRAME_IDLE},
         ));
     }
 }
@@ -89,22 +100,70 @@ fn update_player_animation(
     let player_state = player_states.iter().next().unwrap();
     for (mut sprite, mut animation) in &mut sprites {
         match player_state {
-            PlayerWalkingState::Idle => {
+            PlayerWalkingState::Idle{index, frame_count} => {                
                 animation.timer.tick(time.delta());
-
+                if sprite.index != *index {
+                    sprite.index = *index;
+                }
                 if animation.timer.just_finished() {
                     sprite.index += 1;
-                    if sprite.index >= animation.frame_count {
-                        sprite.index = 0;
+                    if sprite.index >= sprite.index + *frame_count {
+                        sprite.index = *index;
                     }
                 }
             }
-            _ => {
-                //TODO: Implement walking animations
+            PlayerWalkingState::WalkingUp{index, frame_count} => {
+                animation.timer.tick(time.delta());
+                if sprite.index != *index {
+                    sprite.index = *index;
+                }
+                if animation.timer.just_finished() {
+                    sprite.index += 1;
+                    if sprite.index >= sprite.index + *frame_count {
+                        sprite.index = *index;
+                    }
+                }
+            }        
+            PlayerWalkingState::WalkingLeft{index, frame_count} => {
+                animation.timer.tick(time.delta());
+                if sprite.index != *index {
+                    sprite.index = *index;
+                }
+                if animation.timer.just_finished() {
+                    sprite.index += 1;
+                    if sprite.index >= sprite.index + *frame_count {
+                        sprite.index = *index;
+                    }
+                }
+            },
+            PlayerWalkingState::WalkingRight{index, frame_count} => {
+                animation.timer.tick(time.delta());
+                if sprite.index != *index {
+                    sprite.index = *index;
+                }
+                if animation.timer.just_finished() {
+                    sprite.index += 1;
+                    if sprite.index >= sprite.index + *frame_count {
+                        sprite.index = *index;
+                    }
+                }
+            },
+            PlayerWalkingState::WalkingDown{index, frame_count} => {
+                animation.timer.tick(time.delta());
+                if sprite.index != *index {
+                    sprite.index = *index;
+                }
+                if animation.timer.just_finished() {
+                    sprite.index += 1;
+                    if sprite.index >= sprite.index + *frame_count {
+                        sprite.index = *index;
+                    }
+                }
             }
-        }
+        }            
     }
 }
+
 
 fn move_player_from_input(
     mut players: Query<&mut GridCoords, With<Player>>,
@@ -114,19 +173,19 @@ fn move_player_from_input(
 ) {
     let mut player_state = player_state.get_single_mut().expect("Player should exist");
     let movement_direction = if input.pressed(KeyCode::KeyW) {
-        *player_state = PlayerWalkingState::WalkingUp;
+        *player_state = PlayerWalkingState::WalkingUp{index: INDEX_IDLE, frame_count:FRAME_IDLE};
         GridCoords::new(0, 1)
     } else if input.pressed(KeyCode::KeyA) {
-        *player_state = PlayerWalkingState::WalkingLeft;
+        *player_state = PlayerWalkingState::WalkingLeft{index: INDEX_IDLE, frame_count:FRAME_IDLE};
         GridCoords::new(-1, 0)
     } else if input.pressed(KeyCode::KeyS) {
-        *player_state = PlayerWalkingState::WalkingDown;
+        *player_state = PlayerWalkingState::WalkingDown{index: INDEX_IDLE, frame_count:FRAME_IDLE};
         GridCoords::new(0, -1)
     } else if input.pressed(KeyCode::KeyD) {
-        *player_state = PlayerWalkingState::WalkingRight;
+        *player_state = PlayerWalkingState::WalkingRight{index: INDEX_IDLE, frame_count:FRAME_IDLE};
         GridCoords::new(1, 0)
     } else {
-        *player_state = PlayerWalkingState::Idle;
+        *player_state = PlayerWalkingState::Idle{index: INDEX_IDLE, frame_count:FRAME_IDLE};
         return;
     };
 
