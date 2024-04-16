@@ -80,7 +80,7 @@ struct PlayerAnimation {
         columns = 24,
         rows = 8,
         padding_x = 16.,
-        padding_y = 8.,
+        padding_y = 16.,
         offset_x = 8.,
         offset_y = 8.
     ))]
@@ -96,19 +96,10 @@ fn patch_players(
 ) {
     for (entity, mut atlas, mut texture) in &mut player_query {
         let player_animation_indices = PlayerAnimationIndecies {
-            idle: AnimationIndices { first: 0, last: 1 },
-            up: AnimationIndices {
-                first: 95,
-                last: 97,
-            },
-            left: AnimationIndices {
-                first: 146,
-                last: 149,
-            },
-            right: AnimationIndices {
-                first: 49,
-                last: 51,
-            },
+            idle: AnimationIndices {first: 0, last: 1 },
+            up: AnimationIndices {first: 98, last: 100 },
+            left: AnimationIndices {first: 146, last: 149 },
+            right: AnimationIndices {first: 50, last: 52 },
             down: AnimationIndices { first: 2, last: 4 },
         };
 
@@ -139,7 +130,7 @@ fn update_player_animation(
         timer.tick(time.delta());
         if timer.just_finished() {
             match player_state {
-                PlayerWalkingState::Idle => {
+                PlayerWalkingState::Idle => {                    
                     atlas.index = if atlas.index == player_indices.idle.last {
                         player_indices.idle.first
                     } else {
@@ -217,8 +208,7 @@ fn move_player_from_input(
     mut player_state: Query<&mut PlayerWalkingState, With<Player>>,
 ) {
     let mut player_state = player_state.get_single_mut().expect("Player should exist");
-    let movement_direction = if input.pressed(KeyCode::KeyW) {
-        *player_state = PlayerWalkingState::WalkingUp;
+    let movement_direction = if input.pressed(KeyCode::KeyW) {        
         match *player_state {
             PlayerWalkingState::WalkingUp => (),
             _ => {
