@@ -21,5 +21,6 @@ bevy-inspector-egui = "0.23.4"
 bevy_asset_loader = { version = "0.20.1", features = ["2d"] }
 bevy_ecs_ldtk = { git = "https://github.com/theshortcut/bevy_ecs_ldtk/", branch = "bevy-0.13" }
 iyes_perf_ui = "0.2.3"
+rand = "0.8.5"
 [patch.crates-io]
 bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap" }

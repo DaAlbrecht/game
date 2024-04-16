@@ -1,10 +1,13 @@
-use bevy::{prelude::*, time::common_conditions::on_timer};
+use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
+use rand::Rng;
 
-use crate::{assets::LevelWalls, AnimationIndices, AnimationTimer, AppState, GameplaySet};
-
-
+use crate::{
+    assets::LevelWalls,
+    turn::{TurnEvent, TurnMode},
+    AnimationIndices, AnimationTimer, AppState,
+};
 
 pub struct SlimePlugin;
 
@@ -18,7 +21,8 @@ impl Plugin for SlimePlugin {
         .add_systems(OnEnter(AppState::InGame), patch_slime)
         .add_systems(
             Update,
-            (update_slime_animation, update_slime_atlas_index).run_if(in_state(AppState::InGame)),
+            (update_slime_animation, update_slime_atlas_index, move_slime)
+                .run_if(in_state(AppState::InGame)),
         )
         .register_type::<SlimeAnimationIndecies>()
         .register_type::<SlimeAnimationState>();
@@ -32,13 +36,13 @@ pub struct Slime;
 pub enum SlimeAnimationState {
     #[default]
     Idle,
-    Walking    
+    Walking,
 }
 
 #[derive(Component, Reflect)]
 struct SlimeAnimationIndecies {
     idle: AnimationIndices,
-    walking: AnimationIndices,    
+    walking: AnimationIndices,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -65,8 +69,8 @@ fn patch_slime(
 ) {
     for (entity, mut atlas, mut texture) in &mut slime_query {
         let slime_animation_indices = SlimeAnimationIndecies {
-            idle: AnimationIndices {first: 0, last: 1 }, 
-            walking: AnimationIndices{first: 2, last: 5 },          
+            idle: AnimationIndices { first: 0, last: 1 },
+            walking: AnimationIndices { first: 2, last: 5 },
         };
 
         atlas.layout = asset.layout.clone();
@@ -96,7 +100,7 @@ fn update_slime_animation(
         timer.tick(time.delta());
         if timer.just_finished() {
             match slime_state {
-                SlimeAnimationState::Idle => {                    
+                SlimeAnimationState::Idle => {
                     atlas.index = if atlas.index == slime_indices.idle.last {
                         slime_indices.idle.first
                     } else {
@@ -132,7 +136,29 @@ fn update_slime_atlas_index(
             }
             SlimeAnimationState::Walking => {
                 atlas.index = slime_indices.walking.first;
-            }            
+            }
         }
     }
 }
+
+fn move_slime(
+    mut ev_turn: EventReader<TurnEvent>,
+    mut query: Query<&mut GridCoords, With<Slime>>,
+    level_walls: Res<LevelWalls>,
+) {
+    if let Some(turn_event) = ev_turn.read().next() {
+        if turn_event.0 == TurnMode::PlayerAction {
+            for mut coords in query.iter_mut() {
+                let mut rng = rand::thread_rng();
+                let x = rng.gen_range(-1..=1);
+                let y = rng.gen_range(-1..=1);
+                let direction = GridCoords::new(x, y);
+                let destination = *coords + direction;
+                if !level_walls.in_wall(&destination) {
+                    *coords = destination;
+                }
+            }
+        }
+    }
+}
+
