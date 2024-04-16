@@ -2,7 +2,9 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
-use crate::{assets::LevelWalls, AppState, GameplaySet};
+use crate::{assets::LevelWalls, AnimationIndices, AnimationTimer, AppState, GameplaySet};
+
+
 
 /*
 const INDEX_IDLE: usize = 0;
@@ -44,7 +46,7 @@ impl Plugin for PlayerPlugin {
 #[derive(Default, Component, Reflect)]
 pub struct Player;
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect, Default, PartialEq)]
 pub enum PlayerWalkingState {
     #[default]
     Idle,
@@ -52,15 +54,6 @@ pub enum PlayerWalkingState {
     WalkingRight,
     WalkingUp,
     WalkingDown,
-}
-
-#[derive(Component, Deref, DerefMut)]
-pub struct AnimationTimer(Timer);
-
-#[derive(Reflect)]
-struct AnimationIndices {
-    first: usize,
-    last: usize,
 }
 
 #[derive(Component, Reflect)]
@@ -208,50 +201,31 @@ fn move_player_from_input(
     mut player_state: Query<&mut PlayerWalkingState, With<Player>>,
 ) {
     let mut player_state = player_state.get_single_mut().expect("Player should exist");
-    let movement_direction = if input.pressed(KeyCode::KeyW) {        
-        match *player_state {
-            PlayerWalkingState::WalkingUp => (),
-            _ => {
-                *player_state = PlayerWalkingState::WalkingUp;
-                ()
-            }
-        };
+    let movement_direction = if input.pressed(KeyCode::KeyW) {     
+        if *player_state != PlayerWalkingState::WalkingUp{
+            *player_state = PlayerWalkingState::WalkingUp;
+        }         
         GridCoords::new(0, 1)
     } else if input.pressed(KeyCode::KeyA) {
-        match *player_state {
-            PlayerWalkingState::WalkingLeft => (),
-            _ => {
-                *player_state = PlayerWalkingState::WalkingLeft;
-                ()
-            }
-        };
+        if *player_state != PlayerWalkingState::WalkingLeft{
+                *player_state = PlayerWalkingState::WalkingLeft;                
+            }        
         GridCoords::new(-1, 0)
     } else if input.pressed(KeyCode::KeyS) {
-        match *player_state {
-            PlayerWalkingState::WalkingDown => (),
-            _ => {
-                *player_state = PlayerWalkingState::WalkingDown;
-                ()
-            }
-        };
+        if *player_state != PlayerWalkingState::WalkingDown{
+                *player_state = PlayerWalkingState::WalkingDown;                
+            }        
         GridCoords::new(0, -1)
     } else if input.pressed(KeyCode::KeyD) {
-        match *player_state {
-            PlayerWalkingState::WalkingRight => (),
-            _ => {
+        if *player_state != PlayerWalkingState::WalkingRight{
                 *player_state = PlayerWalkingState::WalkingRight;
-                ()
-            }
-        };
+                
+            }        
         GridCoords::new(1, 0)
     } else {
-        match *player_state {
-            PlayerWalkingState::Idle => (),
-            _ => {
-                *player_state = PlayerWalkingState::Idle;
-                ()
-            }
-        };
+        if *player_state != PlayerWalkingState::Idle{
+                *player_state = PlayerWalkingState::Idle;                
+            }        
         return;
     };
 

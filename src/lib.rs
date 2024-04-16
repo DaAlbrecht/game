@@ -6,8 +6,20 @@ pub mod assets;
 pub mod camera;
 pub mod movement;
 pub mod player;
+pub mod slime;
 
 pub const GRID_SIZE: i32 = 16;
+
+#[derive(Reflect)]
+pub struct AnimationIndices {
+    first: usize,
+    last: usize,
+}
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(Timer);
+
+
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum GameplaySet {

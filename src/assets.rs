@@ -4,14 +4,14 @@ use bevy_ecs_ldtk::prelude::*;
 use std::collections::HashSet;
 
 use crate::player::Player;
-
+use crate::slime::Slime;
 pub struct AssetPlugin;
 
 impl Plugin for AssetPlugin {
     fn build(&self, app: &mut App) {
         app.register_ldtk_entity::<PlayerBundle>("Player")
             .register_ldtk_entity::<StairsBundle>("Stairs")
-            .register_ldtk_entity::<StairsBundle>("Enemy")
+            .register_ldtk_entity::<SlimeBundle>("Slime")
             .insert_resource(LevelSelection::index(0))
             .register_ldtk_int_cell::<WallBundle>(1)
             .init_resource::<LevelWalls>();
@@ -23,9 +23,6 @@ pub struct Stair;
 
 #[derive(Default, Component)]
 pub struct Wall;
-
-#[derive(Default, Component)]
-pub struct Enemy;
 
 #[derive(Default, Bundle, LdtkEntity)]
 struct PlayerBundle {
@@ -46,8 +43,8 @@ struct StairsBundle {
 }
 
 #[derive(Default, Bundle, LdtkEntity)]
-struct EnemyBundle {
-    enemy: Enemy,
+struct SlimeBundle {
+    slime: Slime,
     #[sprite_sheet_bundle]
     sprite_sheet_bundle: SpriteSheetBundle,
     #[grid_coords]

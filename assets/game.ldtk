@@ -1140,7 +1140,7 @@
 			"fieldDefs": []
 		},
 		{
-			"identifier": "Enemy",
+			"identifier": "Slime",
 			"uid": 43,
 			"tags": [],
 			"exportToToc": false,
@@ -1222,7 +1222,7 @@
 		{
 			"__cWid": 29,
 			"__cHei": 1,
-			"identifier": "Enemy",
+			"identifier": "Slime",
 			"uid": 42,
 			"relPath": "puny_characters/slime.png",
 			"embedAtlas": null,
@@ -1317,7 +1317,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [34,9],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1331,7 +1331,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [44,7],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1345,7 +1345,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [42,22],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1359,7 +1359,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [28,19],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1373,7 +1373,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [19,21],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1387,7 +1387,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [22,10],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1401,7 +1401,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [19,7],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1415,7 +1415,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [10,24],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1429,7 +1429,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [4,23],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1443,7 +1443,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [11,18],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1457,7 +1457,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [1,4],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -1471,7 +1471,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [10,3],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -3380,7 +3380,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [28,29],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -3394,7 +3394,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [42,10],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -3408,7 +3408,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [7,44],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -3422,7 +3422,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [46,41],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -3436,7 +3436,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [10,14],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -3450,7 +3450,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [27,10],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -6654,7 +6654,7 @@
 					"gridTiles": [],
 					"entityInstances": [
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [4,5],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -6668,7 +6668,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [14,7],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -6710,7 +6710,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [9,16],
 							"__pivot": [0,0],
 							"__tags": [],
@@ -7335,7 +7335,7 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Enemy",
+							"__identifier": "Slime",
 							"__grid": [13,5],
 							"__pivot": [0,0],
 							"__tags": [],
