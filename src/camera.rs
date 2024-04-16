@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{app::FixedMain, prelude::*};
 use bevy_ecs_ldtk::prelude::*;
 
 use crate::{player::Player, GRID_SIZE};
@@ -9,7 +9,7 @@ pub struct CameraPlugin<S: States> {
 impl<S: States> Plugin for CameraPlugin<S> {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            PostUpdate,
             (move_camera, translate_grid_coords_camera).run_if(in_state(self.state.clone())),
         );
     }
