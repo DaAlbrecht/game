@@ -19,8 +19,6 @@ pub struct AnimationIndices {
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
 
-
-
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum GameplaySet {
     InputSet,

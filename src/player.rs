@@ -4,18 +4,6 @@ use bevy_ecs_ldtk::GridCoords;
 
 use crate::{assets::LevelWalls, AnimationIndices, AnimationTimer, AppState, GameplaySet};
 
-
-
-/*
-const INDEX_IDLE: usize = 0;
-const INDEX_UP: usize = 98;
-const INDEX_LEFT: usize = 146;
-const INDEX_REIGHT: usize = 51;
-const INDEX_DOWN: usize = 3;
-const FRAME_IDLE: usize = 2;
-const FRAME_WALKING: usize = 3;
-*/
-
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -89,10 +77,19 @@ fn patch_players(
 ) {
     for (entity, mut atlas, mut texture) in &mut player_query {
         let player_animation_indices = PlayerAnimationIndecies {
-            idle: AnimationIndices {first: 0, last: 1 },
-            up: AnimationIndices {first: 98, last: 100 },
-            left: AnimationIndices {first: 146, last: 149 },
-            right: AnimationIndices {first: 50, last: 52 },
+            idle: AnimationIndices { first: 0, last: 1 },
+            up: AnimationIndices {
+                first: 98,
+                last: 100,
+            },
+            left: AnimationIndices {
+                first: 146,
+                last: 149,
+            },
+            right: AnimationIndices {
+                first: 50,
+                last: 52,
+            },
             down: AnimationIndices { first: 2, last: 4 },
         };
 
@@ -123,7 +120,7 @@ fn update_player_animation(
         timer.tick(time.delta());
         if timer.just_finished() {
             match player_state {
-                PlayerWalkingState::Idle => {                    
+                PlayerWalkingState::Idle => {
                     atlas.index = if atlas.index == player_indices.idle.last {
                         player_indices.idle.first
                     } else {
@@ -201,31 +198,30 @@ fn move_player_from_input(
     mut player_state: Query<&mut PlayerWalkingState, With<Player>>,
 ) {
     let mut player_state = player_state.get_single_mut().expect("Player should exist");
-    let movement_direction = if input.pressed(KeyCode::KeyW) {     
-        if *player_state != PlayerWalkingState::WalkingUp{
+    let movement_direction = if input.pressed(KeyCode::KeyW) {
+        if *player_state != PlayerWalkingState::WalkingUp {
             *player_state = PlayerWalkingState::WalkingUp;
-        }         
+        }
         GridCoords::new(0, 1)
     } else if input.pressed(KeyCode::KeyA) {
-        if *player_state != PlayerWalkingState::WalkingLeft{
-                *player_state = PlayerWalkingState::WalkingLeft;                
-            }        
+        if *player_state != PlayerWalkingState::WalkingLeft {
+            *player_state = PlayerWalkingState::WalkingLeft;
+        }
         GridCoords::new(-1, 0)
     } else if input.pressed(KeyCode::KeyS) {
-        if *player_state != PlayerWalkingState::WalkingDown{
-                *player_state = PlayerWalkingState::WalkingDown;                
-            }        
+        if *player_state != PlayerWalkingState::WalkingDown {
+            *player_state = PlayerWalkingState::WalkingDown;
+        }
         GridCoords::new(0, -1)
     } else if input.pressed(KeyCode::KeyD) {
-        if *player_state != PlayerWalkingState::WalkingRight{
-                *player_state = PlayerWalkingState::WalkingRight;
-                
-            }        
+        if *player_state != PlayerWalkingState::WalkingRight {
+            *player_state = PlayerWalkingState::WalkingRight;
+        }
         GridCoords::new(1, 0)
     } else {
-        if *player_state != PlayerWalkingState::Idle{
-                *player_state = PlayerWalkingState::Idle;                
-            }        
+        if *player_state != PlayerWalkingState::Idle {
+            *player_state = PlayerWalkingState::Idle;
+        }
         return;
     };
 

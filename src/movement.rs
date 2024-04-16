@@ -4,7 +4,7 @@ use bevy_ecs_ldtk::prelude::*;
 use crate::assets::{LevelWalls, Stair, Wall};
 use crate::camera::MainCamera;
 use crate::player::Player;
-use crate::{GameplaySet, GRID_SIZE};
+use crate::{AppState, GameplaySet, GRID_SIZE};
 
 pub struct MovementPlugin;
 
@@ -68,6 +68,7 @@ fn check_stairs(
     players: Query<&GridCoords, (With<Player>, Changed<GridCoords>)>,
     level_selection: ResMut<LevelSelection>,
     stair: Query<&GridCoords, With<Stair>>,
+    mut next_state: ResMut<NextState<AppState>>,
 ) {
     if players
         .iter()
@@ -80,5 +81,6 @@ fn check_stairs(
         };
 
         indices.level += 1;
+        next_state.set(AppState::Loading);
     }
 }
