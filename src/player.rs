@@ -26,8 +26,11 @@ impl Plugin for PlayerPlugin {
         .add_systems(OnEnter(AppState::InGame), patch_players)
         .add_systems(
             Update,
-            (move_player_from_input.run_if(on_timer(std::time::Duration::from_millis(100))))
-                .in_set(GameplaySet::InputSet),
+            (move_player_from_input.run_if(
+                in_state(AppState::InGame)
+                    .and_then(on_timer(std::time::Duration::from_millis(100))),
+            ))
+            .in_set(GameplaySet::InputSet),
         )
         .add_systems(
             Update,
