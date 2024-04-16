@@ -1,8 +1,12 @@
-use bevy::{prelude::*, time::common_conditions::on_timer};
+use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
-use crate::{assets::LevelWalls, AnimationIndices, AnimationTimer, AppState, GameplaySet};
+use crate::{
+    assets::LevelWalls,
+    turn::{Turn, TurnEvent, TurnMode},
+    AnimationIndices, AnimationTimer, AppState, GameplaySet,
+};
 
 pub struct PlayerPlugin;
 
@@ -16,11 +20,8 @@ impl Plugin for PlayerPlugin {
         .add_systems(OnEnter(AppState::InGame), patch_players)
         .add_systems(
             Update,
-            (move_player_from_input.run_if(
-                in_state(AppState::InGame)
-                    .and_then(on_timer(std::time::Duration::from_millis(100))),
-            ))
-            .in_set(GameplaySet::InputSet),
+            (move_player_from_input.run_if(in_state(AppState::InGame)))
+                .in_set(GameplaySet::InputSet),
         )
         .add_systems(
             Update,
@@ -194,36 +195,45 @@ fn update_player_atlas_index(
 fn move_player_from_input(
     mut players: Query<&mut GridCoords, With<Player>>,
     input: Res<ButtonInput<KeyCode>>,
-    level_walls: Res<LevelWalls>,
     mut player_state: Query<&mut PlayerWalkingState, With<Player>>,
+    level_walls: Res<LevelWalls>,
+    mut ev_turn: EventWriter<TurnEvent>,
+    turn: Res<Turn>,
 ) {
     let mut player_state = player_state.get_single_mut().expect("Player should exist");
-    let movement_direction = if input.pressed(KeyCode::KeyW) {
-        if *player_state != PlayerWalkingState::WalkingUp {
-            *player_state = PlayerWalkingState::WalkingUp;
-        }
-        GridCoords::new(0, 1)
-    } else if input.pressed(KeyCode::KeyA) {
-        if *player_state != PlayerWalkingState::WalkingLeft {
-            *player_state = PlayerWalkingState::WalkingLeft;
-        }
-        GridCoords::new(-1, 0)
-    } else if input.pressed(KeyCode::KeyS) {
-        if *player_state != PlayerWalkingState::WalkingDown {
-            *player_state = PlayerWalkingState::WalkingDown;
-        }
-        GridCoords::new(0, -1)
-    } else if input.pressed(KeyCode::KeyD) {
-        if *player_state != PlayerWalkingState::WalkingRight {
-            *player_state = PlayerWalkingState::WalkingRight;
-        }
-        GridCoords::new(1, 0)
-    } else {
-        if *player_state != PlayerWalkingState::Idle {
-            *player_state = PlayerWalkingState::Idle;
-        }
-        return;
-    };
+    let turn_state = &turn.mode;
+    let movement_direction =
+        if input.pressed(KeyCode::KeyW) && turn_state != &TurnMode::PlayerAction {
+            if *player_state != PlayerWalkingState::WalkingUp {
+                *player_state = PlayerWalkingState::WalkingUp;
+            }
+            ev_turn.send(TurnEvent(TurnMode::PlayerAction));
+            GridCoords::new(0, 1)
+        } else if input.pressed(KeyCode::KeyA) && turn_state != &TurnMode::PlayerAction {
+            if *player_state != PlayerWalkingState::WalkingLeft {
+                *player_state = PlayerWalkingState::WalkingLeft;
+            }
+            ev_turn.send(TurnEvent(TurnMode::PlayerAction));
+            GridCoords::new(-1, 0)
+        } else if input.pressed(KeyCode::KeyS) && turn_state != &TurnMode::PlayerAction {
+            if *player_state != PlayerWalkingState::WalkingDown {
+                *player_state = PlayerWalkingState::WalkingDown;
+            }
+            ev_turn.send(TurnEvent(TurnMode::PlayerAction));
+            GridCoords::new(0, -1)
+        } else if input.pressed(KeyCode::KeyD) && turn_state != &TurnMode::PlayerAction {
+            if *player_state != PlayerWalkingState::WalkingRight {
+                *player_state = PlayerWalkingState::WalkingRight;
+            }
+            ev_turn.send(TurnEvent(TurnMode::PlayerAction));
+            GridCoords::new(1, 0)
+        } else {
+            if *player_state != PlayerWalkingState::Idle && turn_state != &TurnMode::PlayerAction {
+                *player_state = PlayerWalkingState::Idle;
+                ev_turn.send(TurnEvent(TurnMode::Idle));
+            }
+            return;
+        };
 
     for mut player_grid_coords in players.iter_mut() {
         let destination = *player_grid_coords + movement_direction;

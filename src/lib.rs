@@ -7,6 +7,7 @@ pub mod camera;
 pub mod movement;
 pub mod player;
 pub mod slime;
+pub mod turn;
 
 pub const GRID_SIZE: i32 = 16;
 
