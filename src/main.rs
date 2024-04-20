@@ -39,6 +39,7 @@ fn debug_plugins(mut commands: Commands) {
     commands.spawn((PerfUiRoot::default(), PerfUiEntryFPS::default()));
 }
 
+#[allow(dead_code)]
 fn print_resources(world: &World) {
     let components = world.components();
 

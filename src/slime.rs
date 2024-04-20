@@ -141,7 +141,7 @@ fn move_slime(
     level_walls: Res<LevelWalls>,
     mut event: EventReader<FreeWalkEvents>,
 ) {
-    if let Some(_) = event.read().next() {
+    if event.read().next().is_some() {
         for mut coords in query.iter_mut() {
             let mut rng = rand::thread_rng();
             let x = rng.gen_range(-1..=1);

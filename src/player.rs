@@ -146,6 +146,7 @@ fn patch_player_animation() -> PlayerAnimationIndecies {
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn update_player_animation(
     mut query: Query<
         (
@@ -283,6 +284,7 @@ fn update_player_atlas_index(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn move_player_from_input(
     mut players: Query<(&mut GridCoords, &mut Direction, &mut PlayerAction), With<Player>>,
     mut free_walk_ev: EventWriter<FreeWalkEvents>,
