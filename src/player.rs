@@ -1,14 +1,17 @@
-use bevy::{input::common_conditions::input_just_released, prelude::*};
+use std::time::Duration;
+
+use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
 use crate::{
-    assets::LevelWalls,
-    turn::{Turn, TurnEvent, TurnMode},
-    AnimationIndices, AnimationTimer, AppState, GameplaySet,
+    assets::LevelWalls, turn::FreeWalkEvents, AnimationIndices, AnimationTimer, AppState,
+    GameplaySet,
 };
 
 pub struct PlayerPlugin;
+
+const PLAYER_ACTION_DELAY: f32 = 0.15;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
@@ -19,33 +22,43 @@ impl Plugin for PlayerPlugin {
         )
         .add_systems(OnEnter(AppState::InGame), patch_players)
         .add_systems(
-            Update,
-            (move_player_from_input.run_if(in_state(AppState::InGame)))
-                .in_set(GameplaySet::InputSet),
+            FixedUpdate,
+            (move_player_from_input.run_if(
+                in_state(AppState::InGame)
+                    .and_then(on_timer(Duration::from_secs_f32(PLAYER_ACTION_DELAY))),
+            ))
+            .in_set(GameplaySet::InputSet),
         )
         .add_systems(
             Update,
-            (update_player_animation, update_player_atlas_index).run_if(in_state(AppState::InGame)),
+            (
+                update_player_animation.after(GameplaySet::InputSet),
+                update_player_atlas_index.after(GameplaySet::InputSet),
+            )
+                .run_if(in_state(AppState::InGame)),
         )
         .register_type::<PlayerAnimationIndecies>()
-        .register_type::<PlayerAnimationState>();
+        .register_type::<PlayerAction>();
     }
 }
 
 #[derive(Default, Component, Reflect)]
 pub struct Player;
 
-#[derive(Component, Reflect, Default, PartialEq)]
-pub enum PlayerAnimationState {
+#[derive(Component, Default, PartialEq, Debug)]
+enum Direction {
+    Up,
     #[default]
-    IdleDown,
-    IdleLeft,
-    IdleRight,
-    IdleUp,
-    WalkingLeft,
-    WalkingRight,
-    WalkingUp,
-    WalkingDown,
+    Down,
+    Left,
+    Right,
+}
+
+#[derive(Component, Default, PartialEq, Reflect, Debug)]
+enum PlayerAction {
+    #[default]
+    Idle,
+    Walking,
 }
 
 #[derive(Component, Reflect)]
@@ -59,6 +72,9 @@ struct PlayerAnimationIndecies {
     right: AnimationIndices,
     down: AnimationIndices,
 }
+
+#[derive(Component, Deref, DerefMut)]
+struct PlayerIdleAnimationTimer(Timer);
 
 #[derive(AssetCollection, Resource)]
 struct PlayerAnimation {
@@ -87,9 +103,14 @@ fn patch_players(
         atlas.layout = asset.layout.clone();
         *texture = asset.texture.clone();
         commands.entity(entity).insert((
-            AnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
+            AnimationTimer(Timer::from_seconds(
+                PLAYER_ACTION_DELAY / 3.0,
+                TimerMode::Repeating,
+            )),
+            PlayerIdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
             player_animation_indices,
-            PlayerAnimationState::default(),
+            PlayerAction::default(),
+            Direction::default(),
         ));
     }
 }
@@ -130,73 +151,87 @@ fn update_player_animation(
         (
             &PlayerAnimationIndecies,
             &mut AnimationTimer,
+            &mut PlayerIdleAnimationTimer,
             &mut TextureAtlas,
+            &Direction,
+            &PlayerAction,
         ),
         With<Player>,
     >,
-    player_states: Query<&PlayerAnimationState, With<Player>>,
     time: Res<Time>,
 ) {
-    let player_state = player_states.iter().next().unwrap();
-    for (player_indices, mut timer, mut atlas) in &mut query {
+    for (player_indices, mut timer, mut idle_timer, mut atlas, player_direction, player_action) in
+        &mut query
+    {
         timer.tick(time.delta());
-        if timer.just_finished() {
-            match player_state {
-                PlayerAnimationState::IdleDown => {
-                    atlas.index = if atlas.index == player_indices.idle_down.last {
-                        player_indices.idle_down.first
-                    } else {
-                        atlas.index + 1
-                    };
+        idle_timer.tick(time.delta());
+        match player_action {
+            PlayerAction::Idle => {
+                if idle_timer.finished() {
+                    match player_direction {
+                        Direction::Up => {
+                            atlas.index = if atlas.index == player_indices.idle_up.last {
+                                player_indices.idle_up.first
+                            } else {
+                                atlas.index + 1
+                            };
+                        }
+                        Direction::Down => {
+                            atlas.index = if atlas.index == player_indices.idle_down.last {
+                                player_indices.idle_down.first
+                            } else {
+                                atlas.index + 1
+                            };
+                        }
+                        Direction::Left => {
+                            atlas.index = if atlas.index == player_indices.idle_left.last {
+                                player_indices.idle_left.first
+                            } else {
+                                atlas.index + 1
+                            };
+                        }
+                        Direction::Right => {
+                            atlas.index = if atlas.index == player_indices.idle_right.last {
+                                player_indices.idle_right.first
+                            } else {
+                                atlas.index + 1
+                            };
+                        }
+                    }
                 }
-                PlayerAnimationState::IdleLeft => {
-                    atlas.index = if atlas.index == player_indices.idle_left.last {
-                        player_indices.idle_left.first
-                    } else {
-                        atlas.index + 1
-                    };
-                }
-                PlayerAnimationState::IdleRight => {
-                    atlas.index = if atlas.index == player_indices.idle_right.last {
-                        player_indices.idle_right.first
-                    } else {
-                        atlas.index + 1
-                    };
-                }
-                PlayerAnimationState::IdleUp => {
-                    atlas.index = if atlas.index == player_indices.idle_up.last {
-                        player_indices.idle_up.first
-                    } else {
-                        atlas.index + 1
-                    };
-                }
-                PlayerAnimationState::WalkingUp => {
-                    atlas.index = if atlas.index == player_indices.up.last {
-                        player_indices.up.first
-                    } else {
-                        atlas.index + 1
-                    };
-                }
-                PlayerAnimationState::WalkingLeft => {
-                    atlas.index = if atlas.index == player_indices.left.last {
-                        player_indices.left.first
-                    } else {
-                        atlas.index + 1
-                    };
-                }
-                PlayerAnimationState::WalkingRight => {
-                    atlas.index = if atlas.index == player_indices.right.last {
-                        player_indices.right.first
-                    } else {
-                        atlas.index + 1
-                    };
-                }
-                PlayerAnimationState::WalkingDown => {
-                    atlas.index = if atlas.index == player_indices.down.last {
-                        player_indices.down.first
-                    } else {
-                        atlas.index + 1
-                    };
+            }
+            PlayerAction::Walking => {
+                if timer.just_finished() {
+                    match player_direction {
+                        Direction::Up => {
+                            atlas.index = if atlas.index == player_indices.up.last {
+                                player_indices.up.first
+                            } else {
+                                atlas.index + 1
+                            };
+                        }
+                        Direction::Down => {
+                            atlas.index = if atlas.index == player_indices.down.last {
+                                player_indices.down.first
+                            } else {
+                                atlas.index + 1
+                            };
+                        }
+                        Direction::Left => {
+                            atlas.index = if atlas.index == player_indices.left.last {
+                                player_indices.left.first
+                            } else {
+                                atlas.index + 1
+                            };
+                        }
+                        Direction::Right => {
+                            atlas.index = if atlas.index == player_indices.right.last {
+                                player_indices.right.first
+                            } else {
+                                atlas.index + 1
+                            };
+                        }
+                    }
                 }
             }
         }
@@ -208,102 +243,79 @@ fn update_player_atlas_index(
         (
             &PlayerAnimationIndecies,
             &mut TextureAtlas,
-            &PlayerAnimationState,
+            &Direction,
+            &PlayerAction,
         ),
-        Changed<PlayerAnimationState>,
+        Changed<PlayerAction>,
     >,
 ) {
-    for (player_indices, mut atlas, player_state) in &mut query {
-        match player_state {
-            PlayerAnimationState::IdleDown => {
-                atlas.index = player_indices.idle_down.first;
-            }
-            PlayerAnimationState::IdleLeft => {
-                atlas.index = player_indices.idle_left.first;
-            }
-            PlayerAnimationState::IdleRight => {
-                atlas.index = player_indices.idle_right.first;
-            }
-            PlayerAnimationState::IdleUp => {
-                atlas.index = player_indices.idle_up.first;
-            }
-            PlayerAnimationState::WalkingUp => {
-                atlas.index = player_indices.up.first;
-            }
-            PlayerAnimationState::WalkingLeft => {
-                atlas.index = player_indices.left.first;
-            }
-            PlayerAnimationState::WalkingRight => {
-                atlas.index = player_indices.right.first;
-            }
-            PlayerAnimationState::WalkingDown => {
-                atlas.index = player_indices.down.first;
-            }
+    for (player_indices, mut atlas, player_direction, player_action) in &mut query {
+        match player_action {
+            PlayerAction::Idle => match player_direction {
+                Direction::Up => {
+                    atlas.index = player_indices.idle_up.first;
+                }
+                Direction::Down => {
+                    atlas.index = player_indices.idle_down.first;
+                }
+                Direction::Left => {
+                    atlas.index = player_indices.idle_left.first;
+                }
+                Direction::Right => {
+                    atlas.index = player_indices.idle_right.first;
+                }
+            },
+            PlayerAction::Walking => match player_direction {
+                Direction::Up => {
+                    atlas.index = player_indices.up.first;
+                }
+                Direction::Down => {
+                    atlas.index = player_indices.down.first;
+                }
+                Direction::Left => {
+                    atlas.index = player_indices.left.first;
+                }
+                Direction::Right => {
+                    atlas.index = player_indices.right.first;
+                }
+            },
         }
     }
 }
 
 fn move_player_from_input(
-    mut players: Query<&mut GridCoords, With<Player>>,
+    mut players: Query<(&mut GridCoords, &mut Direction, &mut PlayerAction), With<Player>>,
+    mut free_walk_ev: EventWriter<FreeWalkEvents>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player_state: Query<&mut PlayerAnimationState, With<Player>>,
     level_walls: Res<LevelWalls>,
-    mut ev_turn: EventWriter<TurnEvent>,
-    turn: Res<Turn>,
 ) {
-    let mut player_state = player_state.get_single_mut().expect("Player should exist");
-    let turn_state = &turn.mode;
-    let movement_direction =
-        if input.pressed(KeyCode::KeyW) && turn_state != &TurnMode::PlayerAction {
-            if *player_state != PlayerAnimationState::WalkingUp {
-                *player_state = PlayerAnimationState::WalkingUp;
-            }
-            ev_turn.send(TurnEvent(TurnMode::PlayerAction));
+    for (mut player_grid_coords, mut player_direction, mut player_action) in players.iter_mut() {
+        let movement_direction = if input.pressed(KeyCode::KeyW) {
+            *player_direction = Direction::Up;
             GridCoords::new(0, 1)
-        } else if input.pressed(KeyCode::KeyA) && turn_state != &TurnMode::PlayerAction {
-            if *player_state != PlayerAnimationState::WalkingLeft {
-                *player_state = PlayerAnimationState::WalkingLeft;
-            }
-            ev_turn.send(TurnEvent(TurnMode::PlayerAction));
+        } else if input.pressed(KeyCode::KeyA) {
+            *player_direction = Direction::Left;
             GridCoords::new(-1, 0)
-        } else if input.pressed(KeyCode::KeyS) && turn_state != &TurnMode::PlayerAction {
-            if *player_state != PlayerAnimationState::WalkingDown {
-                *player_state = PlayerAnimationState::WalkingDown;
-            }
-            ev_turn.send(TurnEvent(TurnMode::PlayerAction));
+        } else if input.pressed(KeyCode::KeyS) {
+            *player_direction = Direction::Down;
             GridCoords::new(0, -1)
-        } else if input.pressed(KeyCode::KeyD) && turn_state != &TurnMode::PlayerAction {
-            if *player_state != PlayerAnimationState::WalkingRight {
-                *player_state = PlayerAnimationState::WalkingRight;
-            }
-            ev_turn.send(TurnEvent(TurnMode::PlayerAction));
+        } else if input.pressed(KeyCode::KeyD) {
+            *player_direction = Direction::Right;
             GridCoords::new(1, 0)
         } else {
-            if input.just_released(KeyCode::KeyW) {
-                if *player_state != PlayerAnimationState::IdleUp {
-                    *player_state = PlayerAnimationState::IdleUp;
-                }
-            } else if input.just_released(KeyCode::KeyA) {
-                if *player_state != PlayerAnimationState::IdleLeft {
-                    *player_state = PlayerAnimationState::IdleLeft;
-                }
-            } else if input.just_released(KeyCode::KeyD) {
-                if *player_state != PlayerAnimationState::IdleRight {
-                    *player_state = PlayerAnimationState::IdleRight;
-                }
-            } else if input.just_released(KeyCode::KeyS) {
-                if *player_state != PlayerAnimationState::IdleDown {
-                    *player_state = PlayerAnimationState::IdleDown;
-                }
+            if *player_action != PlayerAction::Idle {
+                *player_action = PlayerAction::Idle;
             }
-            ev_turn.send(TurnEvent(TurnMode::Idle));
             return;
         };
 
-    for mut player_grid_coords in players.iter_mut() {
-        let destination = *player_grid_coords + movement_direction;
-        if !level_walls.in_wall(&destination) {
-            *player_grid_coords = destination;
+        if movement_direction != GridCoords::new(0, 0) {
+            *player_action = PlayerAction::Walking;
+            free_walk_ev.send(FreeWalkEvents);
+            let destination = *player_grid_coords + movement_direction;
+            if !level_walls.in_wall(&destination) {
+                *player_grid_coords = destination;
+            }
         }
     }
 }

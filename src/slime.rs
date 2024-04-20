@@ -3,11 +3,7 @@ use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 use rand::Rng;
 
-use crate::{
-    assets::LevelWalls,
-    turn::{TurnEvent, TurnMode},
-    AnimationIndices, AnimationTimer, AppState,
-};
+use crate::{assets::LevelWalls, turn::FreeWalkEvents, AnimationIndices, AnimationTimer, AppState};
 
 pub struct SlimePlugin;
 
@@ -142,23 +138,20 @@ fn update_slime_atlas_index(
 }
 
 fn move_slime(
-    mut ev_turn: EventReader<TurnEvent>,
     mut query: Query<&mut GridCoords, With<Slime>>,
     level_walls: Res<LevelWalls>,
+    mut event: EventReader<FreeWalkEvents>,
 ) {
-    if let Some(turn_event) = ev_turn.read().next() {
-        if turn_event.0 == TurnMode::PlayerAction {
-            for mut coords in query.iter_mut() {
-                let mut rng = rand::thread_rng();
-                let x = rng.gen_range(-1..=1);
-                let y = rng.gen_range(-1..=1);
-                let direction = GridCoords::new(x, y);
-                let destination = *coords + direction;
-                if !level_walls.in_wall(&destination) {
-                    *coords = destination;
-                }
+    if let Some(_) = event.read().next() {
+        for mut coords in query.iter_mut() {
+            let mut rng = rand::thread_rng();
+            let x = rng.gen_range(-1..=1);
+            let y = rng.gen_range(-1..=1);
+            let direction = GridCoords::new(x, y);
+            let destination = *coords + direction;
+            if !level_walls.in_wall(&destination) {
+                *coords = destination;
             }
         }
     }
 }
-
