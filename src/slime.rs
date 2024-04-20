@@ -85,14 +85,13 @@ fn update_slime_animation(
             &SlimeAnimationIndecies,
             &mut AnimationTimer,
             &mut TextureAtlas,
+            &SlimeAnimationState,
         ),
         With<Slime>,
     >,
-    slime_states: Query<&SlimeAnimationState, With<Slime>>,
     time: Res<Time>,
 ) {
-    let slime_state = slime_states.iter().next().unwrap();
-    for (slime_indices, mut timer, mut atlas) in &mut query {
+    for (slime_indices, mut timer, mut atlas, slime_state) in &mut query {
         timer.tick(time.delta());
         if timer.just_finished() {
             match slime_state {
