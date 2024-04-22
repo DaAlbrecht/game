@@ -4,10 +4,7 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
-use crate::{
-    assets::LevelWalls, turn::FreeWalkEvents, AnimationIndices, AnimationTimer, AppState,
-    GameplaySet,
-};
+use crate::{assets::LevelWalls, turn::FreeWalkEvents, AnimationTimer, AppState, GameplaySet};
 
 pub struct PlayerPlugin;
 
@@ -30,14 +27,14 @@ impl Plugin for PlayerPlugin {
             .in_set(GameplaySet::InputSet),
         )
         .add_systems(
-            Update,
+            FixedUpdate,
             (
-                update_player_animation.after(GameplaySet::InputSet),
-                update_player_atlas_index.after(GameplaySet::InputSet),
+                update_player_walking_animation,
+                update_player_idle_animation,
+                update_idle_player_atlas,
             )
                 .run_if(in_state(AppState::InGame)),
         )
-        .register_type::<PlayerAnimationIndecies>()
         .register_type::<PlayerAction>();
     }
 }
@@ -61,16 +58,42 @@ enum PlayerAction {
     Walking,
 }
 
-#[derive(Component, Reflect)]
+#[derive(Component)]
 struct PlayerAnimationIndecies {
-    idle_down: AnimationIndices,
-    idle_left: AnimationIndices,
-    idle_right: AnimationIndices,
-    idle_up: AnimationIndices,
-    up: AnimationIndices,
-    left: AnimationIndices,
-    right: AnimationIndices,
-    down: AnimationIndices,
+    idle_down: IndeciesIter,
+    idle_left: IndeciesIter,
+    idle_right: IndeciesIter,
+    idle_up: IndeciesIter,
+    up: IndeciesIter,
+    left: IndeciesIter,
+    right: IndeciesIter,
+    down: IndeciesIter,
+}
+
+struct IndeciesIter {
+    indecies: Vec<usize>,
+    nth: usize,
+}
+
+impl From<Vec<usize>> for IndeciesIter {
+    fn from(indecies: Vec<usize>) -> Self {
+        Self { indecies, nth: 0 }
+    }
+}
+
+impl Iterator for IndeciesIter {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.nth < self.indecies.len() {
+            let index = self.indecies[self.nth];
+            self.nth += 1;
+            Some(index)
+        } else {
+            self.nth = 0;
+            Some(self.indecies[self.nth])
+        }
+    }
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -104,7 +127,7 @@ fn patch_players(
         *texture = asset.texture.clone();
         commands.entity(entity).insert((
             AnimationTimer(Timer::from_seconds(
-                PLAYER_ACTION_DELAY / 3.0,
+                PLAYER_ACTION_DELAY / 2.0,
                 TimerMode::Repeating,
             )),
             PlayerIdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
@@ -117,41 +140,57 @@ fn patch_players(
 
 fn patch_player_animation() -> PlayerAnimationIndecies {
     PlayerAnimationIndecies {
-        idle_down: AnimationIndices { first: 0, last: 1 },
-        idle_left: AnimationIndices {
-            first: 144,
-            last: 145,
-        },
-        idle_right: AnimationIndices {
-            first: 48,
-            last: 49,
-        },
-        idle_up: AnimationIndices {
-            first: 96,
-            last: 97,
-        },
-        up: AnimationIndices {
-            first: 98,
-            last: 100,
-        },
-        left: AnimationIndices {
-            first: 146,
-            last: 149,
-        },
-        right: AnimationIndices {
-            first: 50,
-            last: 52,
-        },
-        down: AnimationIndices { first: 2, last: 4 },
+        idle_down: vec![0, 1].into(),
+        idle_left: vec![144, 145].into(),
+        idle_right: vec![48, 49].into(),
+        idle_up: vec![96, 97].into(),
+        up: vec![98, 99, 100, 99].into(),
+        left: vec![146, 147, 148, 147].into(),
+        right: vec![50, 51, 52, 51].into(),
+        down: vec![2, 3, 4, 3].into(),
     }
 }
 
 #[allow(clippy::type_complexity)]
-fn update_player_animation(
+fn update_player_walking_animation(
     mut query: Query<
         (
-            &PlayerAnimationIndecies,
+            &mut PlayerAnimationIndecies,
             &mut AnimationTimer,
+            &mut TextureAtlas,
+            &Direction,
+            &PlayerAction,
+        ),
+        With<Player>,
+    >,
+    time: Res<Time>,
+) {
+    for (mut player_indices, mut timer, mut atlas, player_direction, player_action) in &mut query {
+        timer.tick(time.delta());
+        if timer.just_finished() && PlayerAction::Walking == *player_action {
+            match player_direction {
+                Direction::Up => {
+                    atlas.index = player_indices.up.next().expect("looping iterator");
+                }
+                Direction::Down => {
+                    atlas.index = player_indices.down.next().expect("looping iterator");
+                }
+                Direction::Left => {
+                    atlas.index = player_indices.left.next().expect("looping iterator");
+                }
+                Direction::Right => {
+                    atlas.index = player_indices.right.next().expect("looping iterator");
+                }
+            }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn update_player_idle_animation(
+    mut query: Query<
+        (
+            &mut PlayerAnimationIndecies,
             &mut PlayerIdleAnimationTimer,
             &mut TextureAtlas,
             &Direction,
@@ -161,88 +200,31 @@ fn update_player_animation(
     >,
     time: Res<Time>,
 ) {
-    for (player_indices, mut timer, mut idle_timer, mut atlas, player_direction, player_action) in
-        &mut query
-    {
+    for (mut player_indices, mut timer, mut atlas, player_direction, player_action) in &mut query {
         timer.tick(time.delta());
-        idle_timer.tick(time.delta());
-        match player_action {
-            PlayerAction::Idle => {
-                if idle_timer.finished() {
-                    match player_direction {
-                        Direction::Up => {
-                            atlas.index = if atlas.index == player_indices.idle_up.last {
-                                player_indices.idle_up.first
-                            } else {
-                                atlas.index + 1
-                            };
-                        }
-                        Direction::Down => {
-                            atlas.index = if atlas.index == player_indices.idle_down.last {
-                                player_indices.idle_down.first
-                            } else {
-                                atlas.index + 1
-                            };
-                        }
-                        Direction::Left => {
-                            atlas.index = if atlas.index == player_indices.idle_left.last {
-                                player_indices.idle_left.first
-                            } else {
-                                atlas.index + 1
-                            };
-                        }
-                        Direction::Right => {
-                            atlas.index = if atlas.index == player_indices.idle_right.last {
-                                player_indices.idle_right.first
-                            } else {
-                                atlas.index + 1
-                            };
-                        }
-                    }
+        if timer.just_finished() && PlayerAction::Idle == *player_action {
+            match player_direction {
+                Direction::Up => {
+                    atlas.index = player_indices.idle_up.next().expect("looping iterator");
                 }
-            }
-            PlayerAction::Walking => {
-                if timer.just_finished() {
-                    match player_direction {
-                        Direction::Up => {
-                            atlas.index = if atlas.index == player_indices.up.last {
-                                player_indices.up.first
-                            } else {
-                                atlas.index + 1
-                            };
-                        }
-                        Direction::Down => {
-                            atlas.index = if atlas.index == player_indices.down.last {
-                                player_indices.down.first
-                            } else {
-                                atlas.index + 1
-                            };
-                        }
-                        Direction::Left => {
-                            atlas.index = if atlas.index == player_indices.left.last {
-                                player_indices.left.first
-                            } else {
-                                atlas.index + 1
-                            };
-                        }
-                        Direction::Right => {
-                            atlas.index = if atlas.index == player_indices.right.last {
-                                player_indices.right.first
-                            } else {
-                                atlas.index + 1
-                            };
-                        }
-                    }
+                Direction::Down => {
+                    atlas.index = player_indices.idle_down.next().expect("looping iterator");
+                }
+                Direction::Left => {
+                    atlas.index = player_indices.idle_left.next().expect("looping iterator");
+                }
+                Direction::Right => {
+                    atlas.index = player_indices.idle_right.next().expect("looping iterator");
                 }
             }
         }
     }
 }
 
-fn update_player_atlas_index(
+fn update_idle_player_atlas(
     mut query: Query<
         (
-            &PlayerAnimationIndecies,
+            &mut PlayerAnimationIndecies,
             &mut TextureAtlas,
             &Direction,
             &PlayerAction,
@@ -250,36 +232,22 @@ fn update_player_atlas_index(
         Changed<PlayerAction>,
     >,
 ) {
-    for (player_indices, mut atlas, player_direction, player_action) in &mut query {
-        match player_action {
-            PlayerAction::Idle => match player_direction {
+    for (mut player_indices, mut atlas, player_direction, player_action) in &mut query {
+        if *player_action == PlayerAction::Idle {
+            match player_direction {
                 Direction::Up => {
-                    atlas.index = player_indices.idle_up.first;
+                    atlas.index = player_indices.idle_up.next().expect("looping iterator");
                 }
                 Direction::Down => {
-                    atlas.index = player_indices.idle_down.first;
+                    atlas.index = player_indices.idle_down.next().expect("looping iterator");
                 }
                 Direction::Left => {
-                    atlas.index = player_indices.idle_left.first;
+                    atlas.index = player_indices.idle_left.next().expect("looping iterator");
                 }
                 Direction::Right => {
-                    atlas.index = player_indices.idle_right.first;
+                    atlas.index = player_indices.idle_right.next().expect("looping iterator");
                 }
-            },
-            PlayerAction::Walking => match player_direction {
-                Direction::Up => {
-                    atlas.index = player_indices.up.first;
-                }
-                Direction::Down => {
-                    atlas.index = player_indices.down.first;
-                }
-                Direction::Left => {
-                    atlas.index = player_indices.left.first;
-                }
-                Direction::Right => {
-                    atlas.index = player_indices.right.first;
-                }
-            },
+            }
         }
     }
 }

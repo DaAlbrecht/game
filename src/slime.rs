@@ -3,7 +3,7 @@ use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 use rand::Rng;
 
-use crate::{assets::LevelWalls, turn::FreeWalkEvents, AnimationIndices, AnimationTimer, AppState};
+use crate::{assets::LevelWalls, turn::FreeWalkEvents, AnimationTimer, AppState};
 
 pub struct SlimePlugin;
 
@@ -37,8 +37,8 @@ pub enum SlimeAnimationState {
 
 #[derive(Component, Reflect)]
 struct SlimeAnimationIndecies {
-    idle: AnimationIndices,
-    walking: AnimationIndices,
+    idle: Vec<usize>,
+    walking: Vec<usize>,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -65,8 +65,8 @@ fn patch_slime(
 ) {
     for (entity, mut atlas, mut texture) in &mut slime_query {
         let slime_animation_indices = SlimeAnimationIndecies {
-            idle: AnimationIndices { first: 0, last: 1 },
-            walking: AnimationIndices { first: 2, last: 5 },
+            idle: vec![0, 1],
+            walking: vec![2, 3, 4, 5],
         };
 
         atlas.layout = asset.layout.clone();
@@ -96,17 +96,25 @@ fn update_slime_animation(
         if timer.just_finished() {
             match slime_state {
                 SlimeAnimationState::Idle => {
-                    atlas.index = if atlas.index == slime_indices.idle.last {
-                        slime_indices.idle.first
+                    atlas.index = if atlas.index == *slime_indices.idle.last().unwrap() {
+                        *slime_indices.idle.first().unwrap()
                     } else {
-                        atlas.index + 1
+                        *slime_indices
+                            .idle
+                            .iter()
+                            .find(|&&x| x > atlas.index)
+                            .unwrap()
                     };
                 }
                 SlimeAnimationState::Walking => {
-                    atlas.index = if atlas.index == slime_indices.walking.last {
-                        slime_indices.walking.first
+                    atlas.index = if atlas.index == *slime_indices.walking.last().unwrap() {
+                        *slime_indices.walking.first().unwrap()
                     } else {
-                        atlas.index + 1
+                        *slime_indices
+                            .walking
+                            .iter()
+                            .find(|&&x| x > atlas.index)
+                            .unwrap()
                     };
                 }
             }
@@ -127,10 +135,10 @@ fn update_slime_atlas_index(
     for (slime_indices, mut atlas, slime_state) in &mut query {
         match slime_state {
             SlimeAnimationState::Idle => {
-                atlas.index = slime_indices.idle.first;
+                atlas.index = *slime_indices.idle.first().unwrap();
             }
             SlimeAnimationState::Walking => {
-                atlas.index = slime_indices.walking.first;
+                atlas.index = *slime_indices.walking.first().unwrap();
             }
         }
     }

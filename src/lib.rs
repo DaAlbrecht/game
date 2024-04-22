@@ -11,12 +11,6 @@ pub mod turn;
 
 pub const GRID_SIZE: i32 = 16;
 
-#[derive(Reflect)]
-pub struct AnimationIndices {
-    first: usize,
-    last: usize,
-}
-
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
 
