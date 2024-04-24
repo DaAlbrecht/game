@@ -16,4 +16,10 @@ pub enum TurnMode {
 }
 
 #[derive(Event)]
-pub struct FreeWalkEvents;
+pub struct FreeWalkEvents {
+    pub walking_state: WalkingState,
+}
+pub enum WalkingState {
+    Idle,
+    Walking,
+}

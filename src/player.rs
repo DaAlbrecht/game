@@ -4,11 +4,13 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
-use crate::{assets::LevelWalls, turn::FreeWalkEvents, AnimationTimer, AppState, GameplaySet};
+use crate::{
+    assets::LevelWalls,
+    turn::{FreeWalkEvents, WalkingState},
+    AnimationTimer, AppState, GameplaySet, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
+};
 
 pub struct PlayerPlugin;
-
-const PLAYER_ACTION_DELAY: f32 = 0.15;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
@@ -22,7 +24,7 @@ impl Plugin for PlayerPlugin {
             FixedUpdate,
             (move_player_from_input.run_if(
                 in_state(AppState::InGame)
-                    .and_then(on_timer(Duration::from_secs_f32(PLAYER_ACTION_DELAY))),
+                    .and_then(on_timer(Duration::from_secs_f32(ACTION_DELAY))),
             ))
             .in_set(GameplaySet::InputSet),
         )
@@ -70,35 +72,6 @@ struct PlayerAnimationIndecies {
     down: IndeciesIter,
 }
 
-struct IndeciesIter {
-    indecies: Vec<usize>,
-    nth: usize,
-}
-
-impl From<Vec<usize>> for IndeciesIter {
-    fn from(indecies: Vec<usize>) -> Self {
-        Self { indecies, nth: 0 }
-    }
-}
-
-impl Iterator for IndeciesIter {
-    type Item = usize;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.nth < self.indecies.len() {
-            let index = self.indecies[self.nth];
-            self.nth += 1;
-            Some(index)
-        } else {
-            self.nth = 0;
-            Some(self.indecies[self.nth])
-        }
-    }
-}
-
-#[derive(Component, Deref, DerefMut)]
-struct PlayerIdleAnimationTimer(Timer);
-
 #[derive(AssetCollection, Resource)]
 struct PlayerAnimation {
     #[asset(texture_atlas_layout(
@@ -127,10 +100,10 @@ fn patch_players(
         *texture = asset.texture.clone();
         commands.entity(entity).insert((
             AnimationTimer(Timer::from_seconds(
-                PLAYER_ACTION_DELAY / 2.0,
+                ACTION_DELAY / 2.0,
                 TimerMode::Repeating,
             )),
-            PlayerIdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
+            IdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
             player_animation_indices,
             PlayerAction::default(),
             Direction::default(),
@@ -191,7 +164,7 @@ fn update_player_idle_animation(
     mut query: Query<
         (
             &mut PlayerAnimationIndecies,
-            &mut PlayerIdleAnimationTimer,
+            &mut IdleAnimationTimer,
             &mut TextureAtlas,
             &Direction,
             &PlayerAction,
@@ -229,7 +202,7 @@ fn update_idle_player_atlas(
             &Direction,
             &PlayerAction,
         ),
-        Changed<PlayerAction>,
+        (Changed<PlayerAction>, With<Player>),
     >,
 ) {
     for (mut player_indices, mut atlas, player_direction, player_action) in &mut query {
@@ -275,13 +248,18 @@ fn move_player_from_input(
         } else {
             if *player_action != PlayerAction::Idle {
                 *player_action = PlayerAction::Idle;
+                free_walk_ev.send(FreeWalkEvents {
+                    walking_state: WalkingState::Idle,
+                });
             }
             return;
         };
 
         if movement_direction != GridCoords::new(0, 0) {
             *player_action = PlayerAction::Walking;
-            free_walk_ev.send(FreeWalkEvents);
+            free_walk_ev.send(FreeWalkEvents {
+                walking_state: WalkingState::Walking,
+            });
             let destination = *player_grid_coords + movement_direction;
             if !level_walls.in_wall(&destination) {
                 *player_grid_coords = destination;

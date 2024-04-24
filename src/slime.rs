@@ -3,7 +3,12 @@ use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 use rand::Rng;
 
-use crate::{assets::LevelWalls, turn::FreeWalkEvents, AnimationTimer, AppState};
+use crate::{
+    assets::LevelWalls,
+    movement,
+    turn::{FreeWalkEvents, WalkingState},
+    AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
+};
 
 pub struct SlimePlugin;
 
@@ -16,11 +21,15 @@ impl Plugin for SlimePlugin {
         )
         .add_systems(OnEnter(AppState::InGame), patch_slime)
         .add_systems(
-            Update,
-            (update_slime_animation, update_slime_atlas_index, move_slime)
+            FixedUpdate,
+            (
+                update_slime_idle_animation,
+                update_slime_walking_animation,
+                update_slime_atlas_index,
+                move_slime,
+            )
                 .run_if(in_state(AppState::InGame)),
         )
-        .register_type::<SlimeAnimationIndecies>()
         .register_type::<SlimeAnimationState>();
     }
 }
@@ -28,18 +37,21 @@ impl Plugin for SlimePlugin {
 #[derive(Default, Component, Reflect)]
 pub struct Slime;
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect, Default, PartialEq, Debug)]
 pub enum SlimeAnimationState {
     #[default]
     Idle,
     Walking,
 }
 
-#[derive(Component, Reflect)]
+#[derive(Component)]
 struct SlimeAnimationIndecies {
-    idle: Vec<usize>,
-    walking: Vec<usize>,
+    idle: IndeciesIter,
+    walking: IndeciesIter,
 }
+
+#[derive(Component, Deref, DerefMut)]
+struct SlimeIdleAnimationTimer(Timer);
 
 #[derive(AssetCollection, Resource)]
 struct SlimeAnimation {
@@ -65,24 +77,28 @@ fn patch_slime(
 ) {
     for (entity, mut atlas, mut texture) in &mut slime_query {
         let slime_animation_indices = SlimeAnimationIndecies {
-            idle: vec![0, 1],
-            walking: vec![2, 3, 4, 5],
+            idle: vec![0, 1].into(),
+            walking: vec![2, 3, 4, 5].into(),
         };
 
         atlas.layout = asset.layout.clone();
         *texture = asset.texture.clone();
         commands.entity(entity).insert((
-            AnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
+            AnimationTimer(Timer::from_seconds(
+                ACTION_DELAY / 4.0,
+                TimerMode::Repeating,
+            )),
+            IdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
             slime_animation_indices,
             SlimeAnimationState::default(),
         ));
     }
 }
 
-fn update_slime_animation(
+fn update_slime_walking_animation(
     mut query: Query<
         (
-            &SlimeAnimationIndecies,
+            &mut SlimeAnimationIndecies,
             &mut AnimationTimer,
             &mut TextureAtlas,
             &SlimeAnimationState,
@@ -91,33 +107,32 @@ fn update_slime_animation(
     >,
     time: Res<Time>,
 ) {
-    for (slime_indices, mut timer, mut atlas, slime_state) in &mut query {
+    for (mut slime_indices, mut timer, mut atlas, slime_state) in &mut query {
         timer.tick(time.delta());
-        if timer.just_finished() {
-            match slime_state {
-                SlimeAnimationState::Idle => {
-                    atlas.index = if atlas.index == *slime_indices.idle.last().unwrap() {
-                        *slime_indices.idle.first().unwrap()
-                    } else {
-                        *slime_indices
-                            .idle
-                            .iter()
-                            .find(|&&x| x > atlas.index)
-                            .unwrap()
-                    };
-                }
-                SlimeAnimationState::Walking => {
-                    atlas.index = if atlas.index == *slime_indices.walking.last().unwrap() {
-                        *slime_indices.walking.first().unwrap()
-                    } else {
-                        *slime_indices
-                            .walking
-                            .iter()
-                            .find(|&&x| x > atlas.index)
-                            .unwrap()
-                    };
-                }
-            }
+        info!("SlimeState:{:?}", slime_state);
+        if timer.just_finished() && *slime_state == SlimeAnimationState::Walking {
+            atlas.index = slime_indices.walking.next().expect("looping iterator");
+            info!("Walking");
+        }
+    }
+}
+
+fn update_slime_idle_animation(
+    mut query: Query<
+        (
+            &mut SlimeAnimationIndecies,
+            &mut IdleAnimationTimer,
+            &mut TextureAtlas,
+            &SlimeAnimationState,
+        ),
+        With<Slime>,
+    >,
+    time: Res<Time>,
+) {
+    for (mut slime_indices, mut timer, mut atlas, slime_state) in &mut query {
+        timer.tick(time.delta());
+        if timer.just_finished() && *slime_state == SlimeAnimationState::Idle {
+            atlas.index = slime_indices.idle.next().expect("looping iterator");
         }
     }
 }
@@ -125,39 +140,49 @@ fn update_slime_animation(
 fn update_slime_atlas_index(
     mut query: Query<
         (
-            &SlimeAnimationIndecies,
+            &mut SlimeAnimationIndecies,
             &mut TextureAtlas,
             &SlimeAnimationState,
         ),
-        Changed<SlimeAnimationState>,
+        (Changed<SlimeAnimationState>, With<Slime>),
     >,
 ) {
-    for (slime_indices, mut atlas, slime_state) in &mut query {
-        match slime_state {
-            SlimeAnimationState::Idle => {
-                atlas.index = *slime_indices.idle.first().unwrap();
-            }
-            SlimeAnimationState::Walking => {
-                atlas.index = *slime_indices.walking.first().unwrap();
-            }
+    for (mut slime_indices, mut atlas, slime_state) in &mut query {
+        if *slime_state == SlimeAnimationState::Idle {
+            atlas.index = slime_indices.idle.next().expect("looping iterator");
         }
     }
 }
 
 fn move_slime(
-    mut query: Query<&mut GridCoords, With<Slime>>,
+    mut query: Query<(&mut GridCoords, &mut SlimeAnimationState), With<Slime>>,
     level_walls: Res<LevelWalls>,
     mut event: EventReader<FreeWalkEvents>,
 ) {
-    if event.read().next().is_some() {
-        for mut coords in query.iter_mut() {
-            let mut rng = rand::thread_rng();
-            let x = rng.gen_range(-1..=1);
-            let y = rng.gen_range(-1..=1);
-            let direction = GridCoords::new(x, y);
-            let destination = *coords + direction;
-            if !level_walls.in_wall(&destination) {
-                *coords = destination;
+    if let Some(free_walking_event) = event.read().next() {
+        match free_walking_event.walking_state {
+            WalkingState::Walking => {
+                for (mut coords, mut slime_animation) in query.iter_mut() {
+                    let mut rng = rand::thread_rng();
+                    let x = rng.gen_range(-1..=1);
+                    let y = rng.gen_range(-1..=1);
+                    let direction = GridCoords::new(x, y);
+
+                    if direction != GridCoords::new(0, 0) {
+                        *slime_animation = SlimeAnimationState::Walking;
+                        let destination = *coords + direction;
+                        if !level_walls.in_wall(&destination) {
+                            *coords = destination;
+                        }
+                    }
+                }
+            }
+            WalkingState::Idle => {
+                for (_, mut slime_animation) in query.iter_mut() {
+                    if *slime_animation != SlimeAnimationState::Idle {
+                        *slime_animation = SlimeAnimationState::Idle;
+                    }
+                }
             }
         }
     }
