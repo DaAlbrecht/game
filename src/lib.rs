@@ -66,29 +66,3 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..Default::default()
     });
 }
-
-//https://www.alexisbacot.com/blog/the-art-of-damping
-pub fn smooth_damp(
-    from: Vec3,
-    to: Vec3,
-    mut smooth_time: f32,
-    max_speed: f32,
-    delta_time: f32,
-) -> Vec3 {
-    smooth_time = f32::max(0.0001, smooth_time);
-    let omega = 2.0 / smooth_time;
-
-    let x = omega * delta_time;
-    let exp = 1.0 / (1. + x + 0.48 * x * x + 0.235 * x * x * x);
-
-    let mut distance_x = from.x - to.x;
-    let mut distance_y = from.y - to.y;
-    let max_distance = max_speed * smooth_time;
-
-    distance_x = f32::clamp(distance_x, -max_distance, max_distance);
-    distance_y = f32::clamp(distance_y, -max_distance, max_distance);
-
-    let x = to.x + (distance_x + omega * distance_x * delta_time) * exp;
-    let y = to.y + (distance_y + omega * distance_y * delta_time) * exp;
-    Vec3::new(x, y, from.z)
-}
