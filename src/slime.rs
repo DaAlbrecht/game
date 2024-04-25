@@ -5,7 +5,6 @@ use rand::Rng;
 
 use crate::{
     assets::LevelWalls,
-    movement,
     turn::{FreeWalkEvents, WalkingState},
     AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
@@ -109,10 +108,8 @@ fn update_slime_walking_animation(
 ) {
     for (mut slime_indices, mut timer, mut atlas, slime_state) in &mut query {
         timer.tick(time.delta());
-        info!("SlimeState:{:?}", slime_state);
         if timer.just_finished() && *slime_state == SlimeAnimationState::Walking {
             atlas.index = slime_indices.walking.next().expect("looping iterator");
-            info!("Walking");
         }
     }
 }

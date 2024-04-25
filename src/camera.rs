@@ -1,43 +1,91 @@
-use bevy::prelude::*;
-use bevy_ecs_ldtk::prelude::*;
+use bevy::{math::f32, prelude::*, window::PrimaryWindow};
 
-use crate::{player::Player, GRID_SIZE};
+use crate::{player::Player, smooth_damp, AppState};
 
 pub struct CameraPlugin<S: States> {
     pub state: S,
 }
 impl<S: States> Plugin for CameraPlugin<S> {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, move_camera.run_if(in_state(self.state.clone())))
-            .add_systems(
-                PostUpdate,
-                (translate_grid_coords_camera.after(move_camera))
-                    .run_if(in_state(self.state.clone())),
-            );
+        app.add_systems(OnExit(AppState::Loading), patch_camera)
+            .add_systems(Update, update_camera.run_if(in_state(self.state.clone())));
     }
 }
 
 #[derive(Component)]
 pub struct MainCamera;
 
-fn move_camera(
-    mut camera_query: Query<&mut GridCoords, (With<MainCamera>, Without<Player>)>,
-    player_query: Query<&GridCoords, With<Player>>,
+fn patch_camera(
+    mut camera: Query<&mut Transform, (With<MainCamera>, Without<Player>)>,
+    player: Query<&Transform, With<Player>>,
+    mut next_state: ResMut<NextState<AppState>>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    let player_pos = player_query.get_single().expect("Player should exist");
-    let mut camera_pos = camera_query.get_single_mut().expect("Camera should exist");
-    camera_pos.x = player_pos.x - 8;
-    camera_pos.y = player_pos.y - 8;
+    let Ok(mut camera) = camera.get_single_mut() else {
+        debug!("Camera2d not found");
+        return;
+    };
+
+    let Ok(player) = player.get_single() else {
+        debug!("Player not found");
+        return;
+    };
+
+    let Ok(window) = window_query.get_single() else {
+        debug!("Window not found");
+        return;
+    };
+    let player_position = player.translation.truncate();
+
+    let width_offset = window.width() / 6.0;
+    let height_offset = window.height() / 6.0;
+
+    let direction = Vec3::new(
+        player_position.x - width_offset,
+        player_position.y - height_offset,
+        camera.translation.z,
+    );
+    camera.translation = direction;
+    next_state.set(AppState::InGame);
 }
 
-fn translate_grid_coords_camera(
-    mut query: Query<(&mut Transform, &GridCoords), (Changed<GridCoords>, With<MainCamera>)>,
+fn update_camera(
+    mut camera: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+    player: Query<&Transform, (With<Player>, Without<Camera2d>)>,
+    time: Res<Time>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    for (mut transform, grid_coords) in query.iter_mut() {
-        let translation =
-            bevy_ecs_ldtk::utils::grid_coords_to_translation(*grid_coords, IVec2::splat(GRID_SIZE));
+    let Ok(mut camera) = camera.get_single_mut() else {
+        debug!("Camera2d not found");
+        return;
+    };
 
-        //TODO: Add clamping to match the level bounds
-        transform.translation = translation.extend(transform.translation.z);
-    }
+    let Ok(player) = player.get_single() else {
+        debug!("Player not found");
+        return;
+    };
+
+    let Ok(window) = window_query.get_single() else {
+        debug!("Window not found");
+        return;
+    };
+
+    let player_position = player.translation.truncate();
+
+    let width_offset = window.width() / 6.0;
+    let height_offset = window.height() / 6.0;
+
+    let direction = Vec3::new(
+        player_position.x - width_offset,
+        player_position.y - height_offset,
+        camera.translation.z,
+    );
+
+    camera.translation = smooth_damp(
+        camera.translation,
+        direction,
+        0.07,
+        f32::INFINITY,
+        time.delta_seconds(),
+    );
 }

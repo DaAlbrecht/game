@@ -3,8 +3,8 @@ use bevy_ecs_ldtk::prelude::*;
 
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use game::{
-    assets::AssetPlugin, camera::CameraPlugin, movement::MovementPlugin, patch_camera,
-    player::PlayerPlugin, setup, slime::SlimePlugin, turn::TurnPlugin, AppState,
+    assets::AssetPlugin, camera::CameraPlugin, movement::MovementPlugin, player::PlayerPlugin,
+    setup, slime::SlimePlugin, turn::TurnPlugin, AppState,
 };
 
 use iyes_perf_ui::{diagnostics::PerfUiEntryFPS, PerfUiPlugin, PerfUiRoot};
@@ -22,8 +22,7 @@ fn main() {
         .add_plugins(PlayerPlugin)
         .add_plugins(SlimePlugin)
         .add_plugins(TurnPlugin)
-        .add_systems(Startup, setup)
-        .add_systems(OnExit(AppState::Loading), patch_camera);
+        .add_systems(Startup, setup);
 
     if cfg!(debug_assertions) {
         app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
