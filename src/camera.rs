@@ -16,15 +16,14 @@ impl<S: States> Plugin for CameraPlugin<S> {
 pub struct MainCamera;
 
 fn update_camera(
-    mut camera: Query<&mut Transform, (With<Camera2d>, Without<Player>)>,
+    mut camera: Query<(&mut Transform, &OrthographicProjection), (With<Camera2d>, Without<Player>)>,
     player: Query<&Transform, (With<Player>, Without<Camera2d>)>,
-    time: Res<Time>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     level_query: Query<&LevelIid, (Without<OrthographicProjection>, Without<Player>)>,
     ldtk_projects: Query<&Handle<LdtkProject>>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
 ) {
-    let Ok(mut camera) = camera.get_single_mut() else {
+    let Ok((mut camera, projection)) = camera.get_single_mut() else {
         debug!("Camera2d not found");
         return;
     };
@@ -57,8 +56,8 @@ fn update_camera(
 
     let player_position = player.translation.truncate();
 
-    let width_offset = window.width() / 6.0;
-    let height_offset = window.height() / 6.0;
+    let width_offset = window.width() / 2. * projection.scale;
+    let height_offset = window.height() / 2. * projection.scale;
 
     let direction_x = f32::clamp(player_position.x, width_offset, level_width - width_offset);
     let direction_y = f32::clamp(
@@ -67,13 +66,11 @@ fn update_camera(
         level_height - height_offset,
     );
 
-    let direction = Vec3::new(
+    let to = Vec3::new(
         direction_x - width_offset,
         direction_y - height_offset,
         camera.translation.z,
     );
 
-    camera.translation = camera
-        .translation
-        .lerp(direction, 1.0 - f32::powf(2.0, -4.0 * time.delta_seconds()));
+    camera.translation = to;
 }

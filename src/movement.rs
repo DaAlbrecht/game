@@ -23,15 +23,21 @@ impl Plugin for MovementPlugin {
 }
 
 fn translate_grid_coords_entities(
-    mut grid_coords_entities: Query<
-        (&mut Transform, &GridCoords),
-        (Changed<GridCoords>, Without<MainCamera>),
-    >,
+    mut grid_coords_entities: Query<(&mut Transform, &GridCoords), Without<MainCamera>>,
+    time: Res<Time>,
 ) {
     for (mut transform, grid_coords) in grid_coords_entities.iter_mut() {
-        transform.translation =
+        let from = transform.translation;
+        let to =
             bevy_ecs_ldtk::utils::grid_coords_to_translation(*grid_coords, IVec2::splat(GRID_SIZE))
                 .extend(transform.translation.z);
+
+        let interpolation = from.lerp(to, 1.0 - f32::powf(2.0, -9.0 * time.delta_seconds()));
+        if (from - to).length() < 0.30 {
+            transform.translation = to;
+        } else {
+            transform.translation = interpolation;
+        }
     }
 }
 

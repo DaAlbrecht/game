@@ -57,7 +57,7 @@ pub enum AppState {
 
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut camera = Camera2dBundle::default();
-    camera.projection.scale = 0.3;
+    camera.projection.scale = 0.2;
     camera.projection.viewport_origin = Vec2::ZERO;
     commands.spawn((camera, MainCamera));
 
