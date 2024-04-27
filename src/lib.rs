@@ -3,6 +3,7 @@ use bevy_ecs_ldtk::prelude::*;
 use camera::MainCamera;
 pub mod assets;
 pub mod camera;
+pub mod enemy;
 pub mod movement;
 pub mod player;
 pub mod slime;

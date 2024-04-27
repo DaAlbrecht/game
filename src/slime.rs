@@ -5,6 +5,7 @@ use rand::Rng;
 
 use crate::{
     assets::LevelWalls,
+    enemy::Enemy,
     turn::{FreeWalkEvents, WalkingState},
     AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
@@ -87,6 +88,7 @@ fn patch_slime(
                 ACTION_DELAY / 4.0,
                 TimerMode::Repeating,
             )),
+            Enemy,
             IdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
             slime_animation_indices,
             SlimeAnimationState::default(),
