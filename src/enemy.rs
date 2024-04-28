@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_ecs_ldtk::GridCoords;
 
 use crate::{player::Player, AppState};
 #[derive(Component)]
@@ -16,18 +17,20 @@ impl Plugin for EnemyPlugin {
 }
 
 fn plater_enemy_range_detection(
-    player_transform: Query<&Transform, With<Player>>,
-    enemies_transform: Query<&Transform, With<Enemy>>,
+    player_pos: Query<&GridCoords, With<Player>>,
+    enemies_pos: Query<&GridCoords, With<Enemy>>,
 ) {
-    let player = if let Ok(player_transform) = player_transform.get_single() {
-        player_transform
+    let player = if let Ok(player_pos) = player_pos.get_single() {
+        player_pos
     } else {
         return;
     };
 
-    for enemy_transform in enemies_transform.iter() {
-        let distance = player.translation.distance(enemy_transform.translation);
-        if distance < 40. {
+    for enemy_pos in enemies_pos.iter() {
+        let x_diff = (player.x - enemy_pos.x).abs();
+        let y_diff = (player.y - enemy_pos.y).abs();
+
+        if x_diff <= 1 && y_diff <= 1 {
             info!("Player is in range of enemy");
         }
     }

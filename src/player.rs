@@ -1,13 +1,12 @@
-use std::time::Duration;
-
-use bevy::{prelude::*, time::common_conditions::on_timer};
+use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
 use crate::{
     assets::LevelWalls,
     turn::{FreeWalkEvents, WalkingState},
-    AnimationTimer, AppState, GameplaySet, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
+    ActionTimer, AnimationTimer, AppState, GameplaySet, IdleAnimationTimer, IndeciesIter,
+    ACTION_DELAY,
 };
 
 pub struct PlayerPlugin;
@@ -22,14 +21,6 @@ impl Plugin for PlayerPlugin {
         .add_systems(OnEnter(AppState::InGame), patch_players)
         .add_systems(
             FixedUpdate,
-            (move_player_from_input.run_if(
-                in_state(AppState::InGame)
-                    .and_then(on_timer(Duration::from_secs_f32(ACTION_DELAY))),
-            ))
-            .in_set(GameplaySet::InputSet),
-        )
-        .add_systems(
-            FixedUpdate,
             (
                 update_player_walking_animation,
                 update_player_idle_animation,
@@ -37,9 +28,19 @@ impl Plugin for PlayerPlugin {
             )
                 .run_if(in_state(AppState::InGame)),
         )
+        .add_systems(
+            Update,
+            (register_movement_direction, update_player_position)
+                .run_if(in_state(AppState::InGame))
+                .in_set(GameplaySet::InputSet),
+        )
+        .init_resource::<MoveDirection>()
         .register_type::<PlayerAction>();
     }
 }
+
+#[derive(Resource, Default)]
+struct MoveDirection(GridCoords);
 
 #[derive(Default, Component, Reflect)]
 pub struct Player;
@@ -103,6 +104,7 @@ fn patch_players(
                 ACTION_DELAY / 2.0,
                 TimerMode::Repeating,
             )),
+            ActionTimer(Timer::from_seconds(ACTION_DELAY, TimerMode::Repeating)),
             IdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
             player_animation_indices,
             PlayerAction::default(),
@@ -225,45 +227,84 @@ fn update_idle_player_atlas(
     }
 }
 
-#[allow(clippy::type_complexity)]
-fn move_player_from_input(
+fn register_movement_direction(
+    input: Res<ButtonInput<KeyCode>>,
+    mut move_direction: ResMut<MoveDirection>,
+) {
+    let movement_direction = if input.pressed(KeyCode::KeyW) {
+        Some(GridCoords::new(0, 1))
+    } else if input.pressed(KeyCode::KeyA) {
+        Some(GridCoords::new(-1, 0))
+    } else if input.pressed(KeyCode::KeyS) {
+        Some(GridCoords::new(0, -1))
+    } else if input.pressed(KeyCode::KeyD) {
+        Some(GridCoords::new(1, 0))
+    } else {
+        None
+    };
+
+    if let Some(direction) = movement_direction {
+        move_direction.0 = direction;
+    }
+}
+
+fn update_player_position(
     mut players: Query<(&mut GridCoords, &mut Direction, &mut PlayerAction), With<Player>>,
     mut free_walk_ev: EventWriter<FreeWalkEvents>,
-    input: Res<ButtonInput<KeyCode>>,
     level_walls: Res<LevelWalls>,
+    mut move_direction: ResMut<MoveDirection>,
+    mut action_timer: Query<&mut ActionTimer, With<Player>>,
+    time: Res<Time>,
 ) {
-    for (mut player_grid_coords, mut player_direction, mut player_action) in players.iter_mut() {
-        let movement_direction = if input.pressed(KeyCode::KeyW) {
-            *player_direction = Direction::Up;
-            GridCoords::new(0, 1)
-        } else if input.pressed(KeyCode::KeyA) {
-            *player_direction = Direction::Left;
-            GridCoords::new(-1, 0)
-        } else if input.pressed(KeyCode::KeyS) {
-            *player_direction = Direction::Down;
-            GridCoords::new(0, -1)
-        } else if input.pressed(KeyCode::KeyD) {
-            *player_direction = Direction::Right;
-            GridCoords::new(1, 0)
+    let (mut player_pos, mut player_direction, mut player_action) =
+        if let Ok((player_pos, player_direction, player_action)) = players.get_single_mut() {
+            (player_pos, player_direction, player_action)
         } else {
-            if *player_action != PlayerAction::Idle {
-                *player_action = PlayerAction::Idle;
-                free_walk_ev.send(FreeWalkEvents {
-                    walking_state: WalkingState::Idle,
-                });
-            }
             return;
         };
 
-        if movement_direction != GridCoords::new(0, 0) {
-            *player_action = PlayerAction::Walking;
-            free_walk_ev.send(FreeWalkEvents {
-                walking_state: WalkingState::Walking,
-            });
-            let destination = *player_grid_coords + movement_direction;
-            if !level_walls.in_wall(&destination) {
-                *player_grid_coords = destination;
+    let mut action_timer = if let Ok(action_timer) = action_timer.get_single_mut() {
+        action_timer
+    } else {
+        return;
+    };
+
+    action_timer.tick(time.delta());
+
+    if action_timer.just_finished() {
+        match move_direction.0 {
+            GridCoords { x: 0, y: 1 } => {
+                *player_direction = Direction::Up;
             }
+            GridCoords { x: -1, y: 0 } => {
+                *player_direction = Direction::Left;
+            }
+            GridCoords { x: 0, y: -1 } => {
+                *player_direction = Direction::Down;
+            }
+            GridCoords { x: 1, y: 0 } => {
+                *player_direction = Direction::Right;
+            }
+            _ => {
+                if *player_action != PlayerAction::Idle {
+                    free_walk_ev.send(FreeWalkEvents {
+                        walking_state: WalkingState::Idle,
+                    });
+                    *player_action = PlayerAction::Idle;
+                }
+                return;
+            }
+        };
+
+        *player_action = PlayerAction::Walking;
+        free_walk_ev.send(FreeWalkEvents {
+            walking_state: WalkingState::Walking,
+        });
+        let destination = *player_pos + move_direction.0;
+        info!("Player moving to {:?}", destination);
+        if !level_walls.in_wall(&destination) {
+            *player_pos = destination;
         }
+        move_direction.0 = GridCoords::new(0, 0);
     }
 }

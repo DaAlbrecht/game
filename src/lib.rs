@@ -18,6 +18,9 @@ pub struct AnimationTimer(Timer);
 #[derive(Component, Deref, DerefMut)]
 pub struct IdleAnimationTimer(Timer);
 
+#[derive(Component, Deref, DerefMut)]
+pub struct ActionTimer(Timer);
+
 pub struct IndeciesIter {
     pub indecies: Vec<usize>,
     pub nth: usize,
