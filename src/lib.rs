@@ -41,8 +41,8 @@ impl Iterator for IndeciesIter {
             self.nth += 1;
             Some(index)
         } else {
-            self.nth = 0;
-            Some(self.indecies[self.nth])
+            self.nth = 1;
+            Some(self.indecies[0])
         }
     }
 }
