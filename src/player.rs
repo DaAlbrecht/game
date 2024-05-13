@@ -5,8 +5,7 @@ use bevy_ecs_ldtk::GridCoords;
 use crate::{
     assets::LevelWalls,
     turn::{FreeWalkEvents, WalkingState},
-    ActionTimer, AnimationTimer, AppState, GameplaySet, IdleAnimationTimer, IndeciesIter,
-    ACTION_DELAY,
+    ActionTimer, AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
 pub struct PlayerPlugin;
@@ -24,22 +23,18 @@ impl Plugin for PlayerPlugin {
             (
                 update_player_walking_animation,
                 update_player_idle_animation,
+                register_movement_direction,
                 update_idle_player_atlas,
+                update_player_position,
             )
                 .run_if(in_state(AppState::InGame)),
         )
-        .add_systems(
-            Update,
-            (register_movement_direction, update_player_position)
-                .run_if(in_state(AppState::InGame))
-                .in_set(GameplaySet::InputSet),
-        )
-        .init_resource::<MoveDirection>()
+        .add_event::<MoveDirection>()
         .register_type::<PlayerAction>();
     }
 }
 
-#[derive(Resource, Default)]
+#[derive(Event, Default)]
 struct MoveDirection(GridCoords);
 
 #[derive(Default, Component, Reflect)]
@@ -229,7 +224,7 @@ fn update_idle_player_atlas(
 
 fn register_movement_direction(
     input: Res<ButtonInput<KeyCode>>,
-    mut move_direction: ResMut<MoveDirection>,
+    mut move_direction: EventWriter<MoveDirection>,
 ) {
     let movement_direction = if input.pressed(KeyCode::KeyW) {
         Some(GridCoords::new(0, 1))
@@ -243,16 +238,17 @@ fn register_movement_direction(
         None
     };
 
-    if let Some(direction) = movement_direction {
-        move_direction.0 = direction;
-    }
+    match movement_direction {
+        Some(direction) => move_direction.send(MoveDirection(direction)),
+        None => move_direction.send(MoveDirection(GridCoords::new(0, 0))),
+    };
 }
 
 fn update_player_position(
     mut players: Query<(&mut GridCoords, &mut Direction, &mut PlayerAction), With<Player>>,
     mut free_walk_ev: EventWriter<FreeWalkEvents>,
+    mut move_direction_ev: EventReader<MoveDirection>,
     level_walls: Res<LevelWalls>,
-    mut move_direction: ResMut<MoveDirection>,
     mut action_timer: Query<&mut ActionTimer, With<Player>>,
     time: Res<Time>,
 ) {
@@ -271,8 +267,50 @@ fn update_player_position(
 
     action_timer.tick(time.delta());
 
-    if action_timer.just_finished() {
-        match move_direction.0 {
+    let event = move_direction_ev.read().next();
+    let move_direction = match event {
+        Some(MoveDirection(direction)) => *direction,
+        None => return,
+    };
+
+    //If the player was idling, we want to start walking immediately and not wait for the action timer to finish
+
+    if *player_action == PlayerAction::Idle {
+        match move_direction {
+            GridCoords { x: 0, y: 1 } => {
+                *player_direction = Direction::Up;
+            }
+            GridCoords { x: -1, y: 0 } => {
+                *player_direction = Direction::Left;
+            }
+            GridCoords { x: 0, y: -1 } => {
+                *player_direction = Direction::Down;
+            }
+            GridCoords { x: 1, y: 0 } => {
+                *player_direction = Direction::Right;
+            }
+            _ => {
+                return;
+            }
+        };
+
+        *player_action = PlayerAction::Walking;
+        free_walk_ev.send(FreeWalkEvents {
+            walking_state: WalkingState::Walking,
+        });
+
+        let destination = *player_pos + move_direction;
+
+        if !level_walls.in_wall(&destination) {
+            *player_pos = destination;
+        }
+        //reset the action timer to prevent the player from moving twice, if the action timer would
+        //finish right after the player started moving from idle
+        action_timer.reset();
+    }
+
+    if action_timer.finished() {
+        match move_direction {
             GridCoords { x: 0, y: 1 } => {
                 *player_direction = Direction::Up;
             }
@@ -300,11 +338,10 @@ fn update_player_position(
         free_walk_ev.send(FreeWalkEvents {
             walking_state: WalkingState::Walking,
         });
-        let destination = *player_pos + move_direction.0;
-        info!("Player moving to {:?}", destination);
+
+        let destination = *player_pos + move_direction;
         if !level_walls.in_wall(&destination) {
             *player_pos = destination;
         }
-        move_direction.0 = GridCoords::new(0, 0);
     }
 }
