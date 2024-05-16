@@ -12,6 +12,15 @@ pub mod turn;
 pub const GRID_SIZE: i32 = 16;
 pub const ACTION_DELAY: f32 = 0.2;
 
+#[derive(Component, Reflect)]
+pub struct Health(i32);
+
+impl Default for Health {
+    fn default() -> Self {
+        Self(100)
+    }
+}
+
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
 

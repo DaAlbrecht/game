@@ -1,4 +1,8 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    render::color,
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+};
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 use rand::Rng;
@@ -74,6 +78,8 @@ fn patch_slime(
     mut commands: Commands,
     asset: Res<SlimeAnimation>,
     mut slime_query: Query<(Entity, &mut TextureAtlas, &mut Handle<Image>), With<Slime>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for (entity, mut atlas, mut texture) in &mut slime_query {
         let slime_animation_indices = SlimeAnimationIndecies {
@@ -92,6 +98,15 @@ fn patch_slime(
             IdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
             slime_animation_indices,
             SlimeAnimationState::default(),
+            MaterialMesh2dBundle {
+                mesh: Mesh2dHandle(meshes.add(Rectangle::new(16.0, 2.0))),
+                material: materials.add(Color::RED),
+                transform: Transform::from_xyz(
+                    // Distribute shapes from -X_EXTENT to +X_EXTENT.
+                    20.0, 20.0, 0.0,
+                ),
+                ..default()
+            },
         ));
     }
 }

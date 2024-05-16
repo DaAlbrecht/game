@@ -5,7 +5,7 @@ use bevy_ecs_ldtk::GridCoords;
 use crate::{
     assets::LevelWalls,
     turn::{FreeWalkEvents, WalkingState},
-    ActionTimer, AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
+    ActionTimer, AnimationTimer, AppState, Health, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
 pub struct PlayerPlugin;
@@ -30,7 +30,8 @@ impl Plugin for PlayerPlugin {
                 .run_if(in_state(AppState::InGame)),
         )
         .add_event::<MoveDirection>()
-        .register_type::<PlayerAction>();
+        .register_type::<PlayerAction>()
+        .register_type::<Health>();
     }
 }
 
@@ -104,6 +105,7 @@ fn patch_players(
             player_animation_indices,
             PlayerAction::default(),
             Direction::default(),
+            Health::default(),
         ));
     }
 }
