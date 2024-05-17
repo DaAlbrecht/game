@@ -21,7 +21,5 @@ pub enum WalkingState {
 }
 
 fn in_combat(mut combat_reader: EventReader<CombatEvent>) {
-    if combat_reader.read().next().is_some() {
-        info!("In Combat")
-    }
+    if combat_reader.read().next().is_some() {}
 }

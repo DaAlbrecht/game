@@ -1,7 +1,6 @@
 use bevy::{
     prelude::*,
-    render::color,
-    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+    sprite::{Material2d, MaterialMesh2dBundle, Mesh2dHandle},
 };
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
@@ -74,6 +73,9 @@ struct SlimeAnimation {
     texture: Handle<Image>,
 }
 
+#[derive(Component)]
+pub struct HealthBar;
+
 fn patch_slime(
     mut commands: Commands,
     asset: Res<SlimeAnimation>,
@@ -98,16 +100,22 @@ fn patch_slime(
             IdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
             slime_animation_indices,
             SlimeAnimationState::default(),
-            MaterialMesh2dBundle {
-                mesh: Mesh2dHandle(meshes.add(Rectangle::new(16.0, 2.0))),
-                material: materials.add(Color::RED),
-                transform: Transform::from_xyz(
-                    // Distribute shapes from -X_EXTENT to +X_EXTENT.
-                    20.0, 20.0, 0.0,
-                ),
-                ..default()
-            },
         ));
+
+        let healt_bar = commands
+            .spawn((
+                HealthBar,
+                MaterialMesh2dBundle {
+                    mesh: Mesh2dHandle(meshes.add(Rectangle::new(10.0, 1.0))),
+                    material: materials.add(Color::RED),
+                    transform: Transform::from_xyz(0., 8., 0.),
+                    visibility: Visibility::Hidden,
+                    ..default()
+                },
+            ))
+            .id();
+
+        commands.entity(entity).add_child(healt_bar);
     }
 }
 
