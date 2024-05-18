@@ -78,6 +78,10 @@ impl Enemy {
     pub fn move_towards_player(&self, player_pos: &GridCoords, enemy_pos: &GridCoords) -> Vec2 {
         let grid_size = IVec2::splat(GRID_SIZE);
 
+        if (player_pos.x - enemy_pos.x).abs() < 2 && (player_pos.y - enemy_pos.y).abs() < 2 {
+            return Vec2::ZERO;
+        }
+
         let player_transform = grid_coords_to_translation(*player_pos, grid_size);
         let enemy_transfrom = grid_coords_to_translation(*enemy_pos, grid_size);
 
