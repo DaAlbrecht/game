@@ -1,6 +1,6 @@
 use bevy::{
     prelude::*,
-    sprite::{Material2d, MaterialMesh2dBundle, Mesh2dHandle},
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
 };
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
@@ -8,7 +8,8 @@ use rand::Rng;
 
 use crate::{
     assets::LevelWalls,
-    enemy::Enemy,
+    enemy::{Enemy, EnemyBehaviorState},
+    player::Player,
     turn::{FreeWalkEvents, WalkingState},
     AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
@@ -53,9 +54,6 @@ struct SlimeAnimationIndecies {
     walking: IndeciesIter,
 }
 
-#[derive(Component, Deref, DerefMut)]
-struct SlimeIdleAnimationTimer(Timer);
-
 #[derive(AssetCollection, Resource)]
 struct SlimeAnimation {
     #[asset(texture_atlas_layout(
@@ -96,10 +94,10 @@ fn patch_slime(
                 ACTION_DELAY / 4.0,
                 TimerMode::Repeating,
             )),
-            Enemy,
             IdleAnimationTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
             slime_animation_indices,
             SlimeAnimationState::default(),
+            Enemy::default(),
         ));
 
         let healt_bar = commands
@@ -159,6 +157,7 @@ fn update_slime_idle_animation(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn update_slime_atlas_index(
     mut query: Query<
         (
@@ -176,19 +175,40 @@ fn update_slime_atlas_index(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn move_slime(
-    mut query: Query<(&mut GridCoords, &mut SlimeAnimationState), With<Slime>>,
+    mut query: Query<
+        (&mut GridCoords, &mut SlimeAnimationState, &Enemy),
+        (With<Slime>, Without<Player>),
+    >,
+    player_pos: Query<&GridCoords, With<Player>>,
     level_walls: Res<LevelWalls>,
     mut event: EventReader<FreeWalkEvents>,
 ) {
+    let player_pos = if let Ok(player_pos) = player_pos.get_single() {
+        *player_pos
+    } else {
+        return;
+    };
+
     if let Some(free_walking_event) = event.read().next() {
         match free_walking_event.walking_state {
             WalkingState::Walking => {
-                for (mut coords, mut slime_animation) in query.iter_mut() {
-                    let mut rng = rand::thread_rng();
-                    let x = rng.gen_range(-1..=1);
-                    let y = rng.gen_range(-1..=1);
-                    let direction = GridCoords::new(x, y);
+                for (mut coords, mut slime_animation, enemy) in query.iter_mut() {
+                    let direction = match enemy.behavior_state {
+                        EnemyBehaviorState::Idle => {
+                            let mut rng = rand::thread_rng();
+                            let x = rng.gen_range(-1..=1);
+                            let y = rng.gen_range(-1..=1);
+                            GridCoords::new(x, y)
+                        }
+                        EnemyBehaviorState::Fleeing => todo!(),
+                        EnemyBehaviorState::Pursuing => {
+                            let direction = enemy.move_towards_player(&player_pos, &coords);
+                            GridCoords::new(direction.x as i32, direction.y as i32)
+                        }
+                        EnemyBehaviorState::Patrolling => todo!(),
+                    };
 
                     if direction != GridCoords::new(0, 0) {
                         *slime_animation = SlimeAnimationState::Walking;
@@ -200,7 +220,7 @@ fn move_slime(
                 }
             }
             WalkingState::Idle => {
-                for (_, mut slime_animation) in query.iter_mut() {
+                for (_, mut slime_animation, _) in query.iter_mut() {
                     if *slime_animation != SlimeAnimationState::Idle {
                         *slime_animation = SlimeAnimationState::Idle;
                     }

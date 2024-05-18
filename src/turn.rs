@@ -1,12 +1,11 @@
 use bevy::prelude::*;
 
-use crate::enemy::CombatEvent;
-
 pub struct TurnPlugin;
 
 impl Plugin for TurnPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, in_combat)
+        app.add_event::<CombatEvent>()
+            .add_event::<PlayerTurnOver>()
             .add_event::<FreeWalkEvents>();
     }
 }
@@ -15,11 +14,14 @@ impl Plugin for TurnPlugin {
 pub struct FreeWalkEvents {
     pub walking_state: WalkingState,
 }
+
+#[derive(Event)]
+pub struct PlayerTurnOver;
+
 pub enum WalkingState {
     Idle,
     Walking,
 }
 
-fn in_combat(mut combat_reader: EventReader<CombatEvent>) {
-    if combat_reader.read().next().is_some() {}
-}
+#[derive(Event)]
+pub struct CombatEvent(pub bool);

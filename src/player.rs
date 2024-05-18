@@ -4,7 +4,7 @@ use bevy_ecs_ldtk::GridCoords;
 
 use crate::{
     assets::LevelWalls,
-    turn::{FreeWalkEvents, WalkingState},
+    turn::{FreeWalkEvents, PlayerTurnOver, WalkingState},
     ActionTimer, AnimationTimer, AppState, Health, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
@@ -29,11 +29,16 @@ impl Plugin for PlayerPlugin {
             )
                 .run_if(in_state(AppState::InGame)),
         )
+        .add_systems(Update, toggle_grid)
         .add_event::<MoveDirection>()
+        .insert_resource(ShowGrid::default())
         .register_type::<PlayerAction>()
         .register_type::<Health>();
     }
 }
+
+#[derive(Resource, Default, DerefMut, Deref)]
+struct ShowGrid(bool);
 
 #[derive(Event, Default)]
 struct MoveDirection(GridCoords);
@@ -193,6 +198,7 @@ fn update_player_idle_animation(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn update_idle_player_atlas(
     mut query: Query<
         (
@@ -248,7 +254,8 @@ fn register_movement_direction(
 
 fn update_player_position(
     mut players: Query<(&mut GridCoords, &mut Direction, &mut PlayerAction), With<Player>>,
-    mut free_walk_ev: EventWriter<FreeWalkEvents>,
+    mut free_walk_ew: EventWriter<FreeWalkEvents>,
+    mut player_turn_ew: EventWriter<PlayerTurnOver>,
     mut move_direction_ev: EventReader<MoveDirection>,
     level_walls: Res<LevelWalls>,
     mut action_timer: Query<&mut ActionTimer, With<Player>>,
@@ -297,7 +304,7 @@ fn update_player_position(
         };
 
         *player_action = PlayerAction::Walking;
-        free_walk_ev.send(FreeWalkEvents {
+        free_walk_ew.send(FreeWalkEvents {
             walking_state: WalkingState::Walking,
         });
 
@@ -327,7 +334,7 @@ fn update_player_position(
             }
             _ => {
                 if *player_action != PlayerAction::Idle {
-                    free_walk_ev.send(FreeWalkEvents {
+                    free_walk_ew.send(FreeWalkEvents {
                         walking_state: WalkingState::Idle,
                     });
                     *player_action = PlayerAction::Idle;
@@ -337,13 +344,21 @@ fn update_player_position(
         };
 
         *player_action = PlayerAction::Walking;
-        free_walk_ev.send(FreeWalkEvents {
+        free_walk_ew.send(FreeWalkEvents {
             walking_state: WalkingState::Walking,
         });
+
+        player_turn_ew.send(PlayerTurnOver);
 
         let destination = *player_pos + move_direction;
         if !level_walls.in_wall(&destination) {
             *player_pos = destination;
         }
+    }
+}
+
+fn toggle_grid(input: Res<ButtonInput<KeyCode>>, mut show_grid: ResMut<ShowGrid>) {
+    if input.just_pressed(KeyCode::KeyX) {
+        show_grid.0 = !show_grid.0;
     }
 }

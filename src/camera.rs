@@ -15,6 +15,7 @@ impl<S: States> Plugin for CameraPlugin<S> {
 #[derive(Component)]
 pub struct MainCamera;
 
+#[allow(clippy::type_complexity)]
 fn update_camera(
     mut camera: Query<(&mut Transform, &OrthographicProjection), (With<Camera2d>, Without<Player>)>,
     player: Query<&Transform, (With<Player>, Without<Camera2d>)>,
