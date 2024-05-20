@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-pub struct TurnPlugin;
+pub struct EventsPlugin;
 
-impl Plugin for TurnPlugin {
+impl Plugin for EventsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CombatEvent>()
             .add_event::<PlayerTurnOver>()

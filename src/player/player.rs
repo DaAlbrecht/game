@@ -3,8 +3,8 @@ use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
 use crate::{
-    assets::LevelWalls,
-    turn::{FreeWalkEvents, PlayerTurnOver, WalkingState},
+    events::{FreeWalkEvents, PlayerTurnOver, WalkingState},
+    ldtk::LevelWalls,
     ActionTimer, AnimationTimer, AppState, Health, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 

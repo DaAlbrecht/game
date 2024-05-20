@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::{utils::grid_coords_to_translation, GridCoords};
 
-use crate::{player::Player, slime::HealthBar, turn::CombatEvent, AppState, GRID_SIZE};
+use crate::{events::CombatEvent, player::player::Player, AppState, GRID_SIZE};
+
+use super::slime::HealthBar;
 
 pub struct EnemyPlugin;
 

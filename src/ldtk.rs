@@ -3,11 +3,11 @@ use bevy_ecs_ldtk::prelude::*;
 
 use std::collections::HashSet;
 
-use crate::player::Player;
-use crate::slime::Slime;
-pub struct AssetPlugin;
+use crate::{enemy::slime::Slime, player::player::Player};
 
-impl Plugin for AssetPlugin {
+pub struct LdtkAssetPlugin;
+
+impl Plugin for LdtkAssetPlugin {
     fn build(&self, app: &mut App) {
         app.register_ldtk_entity::<PlayerBundle>("Player")
             .register_ldtk_entity::<StairsBundle>("Stairs")

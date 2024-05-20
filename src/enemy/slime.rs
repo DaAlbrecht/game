@@ -7,12 +7,13 @@ use bevy_ecs_ldtk::GridCoords;
 use rand::Rng;
 
 use crate::{
-    assets::LevelWalls,
-    enemy::{Enemy, EnemyBehaviorState},
-    player::Player,
-    turn::{FreeWalkEvents, WalkingState},
+    events::{FreeWalkEvents, WalkingState},
+    ldtk::LevelWalls,
+    player::player::Player,
     AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
+
+use super::enemy::{Enemy, EnemyBehaviorState};
 
 pub struct SlimePlugin;
 

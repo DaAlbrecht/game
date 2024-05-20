@@ -1,14 +1,14 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
-use crate::assets::{LevelWalls, Stair, Wall};
 use crate::camera::MainCamera;
-use crate::player::Player;
+use crate::ldtk::{LevelWalls, Stair, Wall};
+use crate::player::player::Player;
 use crate::{AppState, GameplaySet, GRID_SIZE};
 
-pub struct MovementPlugin;
+pub struct GridPlugin;
 
-impl Plugin for MovementPlugin {
+impl Plugin for GridPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
