@@ -10,7 +10,9 @@ use game::{
     grid::GridPlugin,
     ldtk::LdtkAssetPlugin,
     player::player::PlayerPlugin,
-    setup, AppState,
+    setup,
+    ui::action_bar::ActionBarPlugin,
+    AppState,
 };
 use iyes_perf_ui::{diagnostics::PerfUiEntryFPS, PerfUiPlugin, PerfUiRoot};
 
@@ -28,6 +30,7 @@ fn main() {
         .add_plugins(SlimePlugin)
         .add_plugins(EnemyPlugin)
         .add_plugins(EventsPlugin)
+        .add_plugins(ActionBarPlugin)
         .add_systems(Startup, setup);
 
     if cfg!(debug_assertions) {
