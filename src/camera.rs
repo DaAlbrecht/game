@@ -1,7 +1,7 @@
 use bevy::{math::f32, prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::prelude::*;
 
-use crate::player::player::Player;
+use crate::player::Player;
 
 pub struct CameraPlugin<S: States> {
     pub state: S,

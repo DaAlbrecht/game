@@ -13,7 +13,7 @@ use sickle_ui::{
     },
 };
 
-use super::MainUi;
+use super::PlayerHud;
 
 pub struct ActionBarPlugin;
 impl Plugin for ActionBarPlugin {
@@ -32,7 +32,7 @@ pub trait ActionBarWidgetExt<'w, 's> {
 impl<'w, 's> ActionBarWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
     fn action_bar_widget<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
         self.container(
-            (ImageBundle::default(), (ActionBarWidget, MainUi)),
+            (ImageBundle::default(), (ActionBarWidget, PlayerHud)),
             |action_bar| {
                 action_bar
                     .style()

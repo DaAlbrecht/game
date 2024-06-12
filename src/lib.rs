@@ -3,16 +3,11 @@ use bevy_ecs_ldtk::prelude::*;
 use camera::MainCamera;
 pub mod camera;
 
-pub mod enemy {
-    pub mod enemy;
-    pub mod slime;
-}
-pub mod player {
-    pub mod player;
-}
+pub mod enemy;
 pub mod events;
 pub mod grid;
 pub mod ldtk;
+pub mod player;
 pub mod ui;
 
 pub const GRID_SIZE: i32 = 16;

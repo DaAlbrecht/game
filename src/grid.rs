@@ -3,8 +3,7 @@ use bevy_ecs_ldtk::prelude::*;
 
 use crate::camera::MainCamera;
 use crate::ldtk::{LevelWalls, Stair, Wall};
-use crate::player::player::Player;
-use crate::{AppState, GameplaySet, GRID_SIZE};
+use crate::{player::Player, AppState, GameplaySet, GRID_SIZE};
 
 pub struct GridPlugin;
 

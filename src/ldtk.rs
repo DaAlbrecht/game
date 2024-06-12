@@ -3,7 +3,7 @@ use bevy_ecs_ldtk::prelude::*;
 
 use std::collections::HashSet;
 
-use crate::{enemy::slime::Slime, player::player::Player};
+use crate::{enemy::slime::Slime, player::Player};
 
 pub struct LdtkAssetPlugin;
 

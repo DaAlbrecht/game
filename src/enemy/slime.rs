@@ -9,11 +9,11 @@ use rand::Rng;
 use crate::{
     events::{FreeWalkEvents, WalkingState},
     ldtk::LevelWalls,
-    player::player::Player,
+    player::Player,
     AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
-use super::enemy::{Enemy, EnemyBehaviorState};
+use super::{Enemy, EnemyBehaviorState, HealthBar};
 
 pub struct SlimePlugin;
 
@@ -71,9 +71,6 @@ struct SlimeAnimation {
     #[asset(path = "puny_characters/slime.png")]
     texture: Handle<Image>,
 }
-
-#[derive(Component)]
-pub struct HealthBar;
 
 fn patch_slime(
     mut commands: Commands,

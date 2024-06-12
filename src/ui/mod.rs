@@ -1,21 +1,23 @@
-pub mod action_bar;
+use self::{action_bar::ActionBarPlugin, player_widget::PlayerWidgetPlugin};
 use bevy::prelude::*;
 
-use self::action_bar::ActionBarPlugin;
+mod action_bar;
+mod player_widget;
 
 pub struct UiPlugin;
 
 #[derive(Component)]
-struct MainUi;
+struct PlayerHud;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(ActionBarPlugin)
+            .add_plugins(PlayerWidgetPlugin)
             .add_systems(Update, toggle_ui);
     }
 }
 
-fn toggle_ui(input: Res<ButtonInput<KeyCode>>, mut query: Query<&mut Visibility, With<MainUi>>) {
+fn toggle_ui(input: Res<ButtonInput<KeyCode>>, mut query: Query<&mut Visibility, With<PlayerHud>>) {
     if !input.just_pressed(KeyCode::Space) {
         return;
     }
