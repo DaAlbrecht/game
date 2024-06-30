@@ -5,9 +5,11 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use game::{
     camera::CameraPlugin,
+    combat::CombatPlugin,
     enemy::{slime::SlimePlugin, EnemyPlugin},
     events::EventsPlugin,
     grid::GridPlugin,
+    input::InputPlugin,
     ldtk::LdtkAssetPlugin,
     player::PlayerPlugin,
     setup,
@@ -26,9 +28,11 @@ fn main() {
         .add_plugins(CameraPlugin {
             state: AppState::InGame,
         })
+        .add_plugins(InputPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(SlimePlugin)
         .add_plugins(EnemyPlugin)
+        .add_plugins(CombatPlugin)
         .add_plugins(EventsPlugin)
         .add_plugins(UiPlugin)
         .add_systems(Startup, setup);

@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use sickle_ui::{
     ui_builder::{UiBuilder, UiBuilderExt, UiRoot},
     ui_style::{
-        SetBackgroundColorExt, SetNodeHeightExt, SetNodePositionTypeExt, SetNodeRightExt,
-        SetNodeTopExt, SetNodeWidthExt,
+        SetBackgroundColorExt, SetNodeHeightExt, SetNodeLeftExt, SetNodePositionTypeExt,
+        SetNodeRightExt, SetNodeTopExt, SetNodeWidthExt,
     },
     widgets::container::UiContainerExt,
 };
@@ -32,12 +32,11 @@ impl<'w, 's> PlayerWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
                 player_widget
                     .style()
                     .position_type(PositionType::Absolute)
-                    .right(Val::Percent(20.0))
+                    .left(Val::Percent(10.0))
                     .top(Val::Percent(80.0))
                     .background_color(Color::GREEN)
-                    .width(Val::Px(50.0))
-                    .height(Val::Px(50.0));
-                //.width(Val::Auto);
+                    .width(Val::Percent(10.0))
+                    .height(Val::Percent(10.0));
             },
         )
     }

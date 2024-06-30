@@ -3,9 +3,11 @@ use bevy_ecs_ldtk::prelude::*;
 use camera::MainCamera;
 pub mod camera;
 
+pub mod combat;
 pub mod enemy;
 pub mod events;
 pub mod grid;
+pub mod input;
 pub mod ldtk;
 pub mod player;
 pub mod ui;

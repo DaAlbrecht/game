@@ -23,25 +23,23 @@ impl Plugin for PlayerPlugin {
             (
                 update_player_walking_animation,
                 update_player_idle_animation,
-                register_movement_direction,
                 update_idle_player_atlas,
                 update_player_position,
             )
                 .run_if(in_state(AppState::InGame)),
         )
         .add_systems(Update, toggle_grid)
-        .add_event::<MoveDirection>()
         .insert_resource(ShowGrid::default())
         .register_type::<PlayerAction>()
         .register_type::<Health>();
     }
 }
 
+#[derive(Event, Default)]
+pub struct MoveDirection(pub GridCoords);
+
 #[derive(Resource, Default, DerefMut, Deref)]
 struct ShowGrid(bool);
-
-#[derive(Event, Default)]
-struct MoveDirection(GridCoords);
 
 #[derive(Default, Component, Reflect)]
 pub struct Player;
@@ -228,28 +226,6 @@ fn update_idle_player_atlas(
             }
         }
     }
-}
-
-fn register_movement_direction(
-    input: Res<ButtonInput<KeyCode>>,
-    mut move_direction: EventWriter<MoveDirection>,
-) {
-    let movement_direction = if input.pressed(KeyCode::KeyW) {
-        Some(GridCoords::new(0, 1))
-    } else if input.pressed(KeyCode::KeyA) {
-        Some(GridCoords::new(-1, 0))
-    } else if input.pressed(KeyCode::KeyS) {
-        Some(GridCoords::new(0, -1))
-    } else if input.pressed(KeyCode::KeyD) {
-        Some(GridCoords::new(1, 0))
-    } else {
-        None
-    };
-
-    match movement_direction {
-        Some(direction) => move_direction.send(MoveDirection(direction)),
-        None => move_direction.send(MoveDirection(GridCoords::new(0, 0))),
-    };
 }
 
 fn update_player_position(
