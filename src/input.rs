@@ -4,7 +4,7 @@ use leafwing_input_manager::prelude::*;
 
 use crate::{
     combat::AbilityKeyEvent,
-    player::{MoveDirection, Player},
+    player::{Player, PlayerMove},
     AppState,
 };
 
@@ -13,7 +13,7 @@ pub struct InputPlugin;
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(InputManagerPlugin::<PlayerAction>::default())
-            .add_event::<MoveDirection>()
+            .add_event::<PlayerMove>()
             .add_systems(OnEnter(AppState::InGame), add_input_manager)
             .add_systems(
                 Update,
@@ -99,16 +99,18 @@ fn add_input_manager(mut commands: Commands, player: Query<Entity, With<Player>>
 
 fn move_player(
     query: Query<&ActionState<PlayerAction>, With<Player>>,
-    mut move_direction: EventWriter<MoveDirection>,
+    mut move_direction: EventWriter<PlayerMove>,
 ) {
     let action_state = query.single();
     for input_direction in PlayerAction::DIRECTIONS {
         if action_state.pressed(&input_direction) {
             if let Some(direction) = input_direction.direction() {
-                move_direction.send(MoveDirection(direction));
+                move_direction.send(PlayerMove(direction));
+                return;
             }
         }
     }
+    move_direction.send(PlayerMove(GridCoords::new(0, 0)));
 }
 
 fn use_ability(
