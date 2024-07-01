@@ -28,7 +28,6 @@ impl Plugin for PlayerPlugin {
             )
                 .run_if(in_state(AppState::InGame)),
         )
-        .add_systems(Update, toggle_grid)
         .insert_resource(ShowGrid::default())
         .register_type::<PlayerAction>()
         .register_type::<Health>();
@@ -330,11 +329,5 @@ fn update_player_position(
         if !level_walls.in_wall(&destination) {
             *player_pos = destination;
         }
-    }
-}
-
-fn toggle_grid(input: Res<ButtonInput<KeyCode>>, mut show_grid: ResMut<ShowGrid>) {
-    if input.just_pressed(KeyCode::KeyX) {
-        show_grid.0 = !show_grid.0;
     }
 }

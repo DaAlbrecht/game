@@ -78,7 +78,7 @@ impl PlayerInputBundle {
         input_map.insert(Ability1, KeyCode::KeyQ);
         input_map.insert(Ability1, GamepadButtonType::West);
 
-        input_map.insert(Ability2, KeyCode::KeyW);
+        input_map.insert(Ability2, KeyCode::KeyE);
         input_map.insert(Ability2, GamepadButtonType::North);
 
         input_map
