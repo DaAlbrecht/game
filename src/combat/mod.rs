@@ -1,25 +1,20 @@
 use bevy::prelude::*;
+use leafwing_input_manager::action_state::ActionState;
+
+use crate::{input::PlayerAction, player::Player, AppState};
 
 pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<AbilityKeyEvent>()
-            .add_systems(Update, (test).run_if(on_event::<AbilityKeyEvent>()));
+        app.add_systems(Update, (test).run_if(in_state(AppState::InGame)));
     }
 }
 
-#[derive(Event)]
-pub enum AbilityKeyEvent {
-    Q,
-    E,
-}
+fn test(query: Query<&ActionState<PlayerAction>, With<Player>>) {
+    let action_state = query.single();
 
-fn test(mut ability_er: EventReader<AbilityKeyEvent>) {
-    for event in ability_er.read() {
-        match event {
-            AbilityKeyEvent::Q => println!("Q"),
-            AbilityKeyEvent::E => println!("E"),
-        }
+    if action_state.just_pressed(&PlayerAction::Ability1) {
+        println!("Ability 1 just pressed");
     }
 }

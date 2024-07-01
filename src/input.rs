@@ -3,7 +3,6 @@ use bevy_ecs_ldtk::GridCoords;
 use leafwing_input_manager::prelude::*;
 
 use crate::{
-    combat::AbilityKeyEvent,
     player::{Player, PlayerMove},
     AppState,
 };
@@ -15,15 +14,12 @@ impl Plugin for InputPlugin {
         app.add_plugins(InputManagerPlugin::<PlayerAction>::default())
             .add_event::<PlayerMove>()
             .add_systems(OnEnter(AppState::InGame), add_input_manager)
-            .add_systems(
-                Update,
-                (move_player, use_ability).run_if(in_state(AppState::InGame)),
-            );
+            .add_systems(Update, (move_player).run_if(in_state(AppState::InGame)));
     }
 }
 
 #[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
-enum PlayerAction {
+pub enum PlayerAction {
     Up,
     Down,
     Left,
@@ -111,17 +107,4 @@ fn move_player(
         }
     }
     move_direction.send(PlayerMove(GridCoords::new(0, 0)));
-}
-
-fn use_ability(
-    query: Query<&ActionState<PlayerAction>, With<Player>>,
-    mut ability_ew: EventWriter<AbilityKeyEvent>,
-) {
-    let action_state = query.single();
-    if action_state.pressed(&PlayerAction::Ability1) {
-        ability_ew.send(AbilityKeyEvent::Q);
-    }
-    if action_state.pressed(&PlayerAction::Ability2) {
-        ability_ew.send(AbilityKeyEvent::E);
-    }
 }
