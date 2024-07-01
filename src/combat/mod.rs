@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::Mesh2dHandle};
+use bevy::prelude::*;
 
 pub struct CombatPlugin;
 
