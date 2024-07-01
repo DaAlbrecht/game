@@ -3,9 +3,8 @@ use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
 use crate::{
-    events::{FreeWalkEvents, PlayerTurnOver, WalkingState},
-    ldtk::LevelWalls,
-    ActionTimer, AnimationTimer, AppState, Health, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
+    events::TurnOver, ldtk::LevelWalls, ActionTimer, AnimationTimer, AppState, Health,
+    IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
 pub struct PlayerPlugin;
@@ -28,22 +27,19 @@ impl Plugin for PlayerPlugin {
             )
                 .run_if(in_state(AppState::InGame)),
         )
-        .insert_resource(ShowGrid::default())
+        .register_type::<Direction>()
         .register_type::<PlayerAction>()
         .register_type::<Health>();
     }
 }
 
-#[derive(Event, Default)]
-pub struct MoveDirection(pub GridCoords);
-
-#[derive(Resource, Default, DerefMut, Deref)]
-struct ShowGrid(bool);
-
 #[derive(Default, Component, Reflect)]
 pub struct Player;
 
-#[derive(Component, Default, PartialEq, Debug)]
+#[derive(Event, Default)]
+pub struct PlayerMove(pub GridCoords);
+
+#[derive(Component, Default, PartialEq, Debug, Reflect)]
 enum Direction {
     Up,
     #[default]
@@ -52,8 +48,22 @@ enum Direction {
     Right,
 }
 
+impl TryFrom<GridCoords> for Direction {
+    type Error = ();
+
+    fn try_from(value: GridCoords) -> Result<Self, Self::Error> {
+        match value {
+            GridCoords { x: 0, y: 1 } => Ok(Direction::Up),
+            GridCoords { x: 0, y: -1 } => Ok(Direction::Down),
+            GridCoords { x: -1, y: 0 } => Ok(Direction::Left),
+            GridCoords { x: 1, y: 0 } => Ok(Direction::Right),
+            _ => Err(()),
+        }
+    }
+}
+
 #[derive(Component, Default, PartialEq, Reflect, Debug)]
-enum PlayerAction {
+pub enum PlayerAction {
     #[default]
     Idle,
     Walking,
@@ -229,11 +239,10 @@ fn update_idle_player_atlas(
 
 fn update_player_position(
     mut players: Query<(&mut GridCoords, &mut Direction, &mut PlayerAction), With<Player>>,
-    mut free_walk_ew: EventWriter<FreeWalkEvents>,
-    mut player_turn_ew: EventWriter<PlayerTurnOver>,
-    mut move_direction_ev: EventReader<MoveDirection>,
-    level_walls: Res<LevelWalls>,
+    mut move_direction_er: EventReader<PlayerMove>,
     mut action_timer: Query<&mut ActionTimer, With<Player>>,
+    mut turn_over_ew: EventWriter<TurnOver>,
+    level_walls: Res<LevelWalls>,
     time: Res<Time>,
 ) {
     let (mut player_pos, mut player_direction, mut player_action) =
@@ -251,83 +260,53 @@ fn update_player_position(
 
     action_timer.tick(time.delta());
 
-    let event = move_direction_ev.read().next();
+    let event = move_direction_er.read().next();
     let move_direction = match event {
-        Some(MoveDirection(direction)) => *direction,
+        Some(PlayerMove(direction)) => *direction,
         None => return,
     };
 
     //If the player was idling, we want to start walking immediately and not wait for the action timer to finish
-
     if *player_action == PlayerAction::Idle {
-        match move_direction {
-            GridCoords { x: 0, y: 1 } => {
-                *player_direction = Direction::Up;
-            }
-            GridCoords { x: -1, y: 0 } => {
-                *player_direction = Direction::Left;
-            }
-            GridCoords { x: 0, y: -1 } => {
-                *player_direction = Direction::Down;
-            }
-            GridCoords { x: 1, y: 0 } => {
-                *player_direction = Direction::Right;
-            }
-            _ => {
-                return;
-            }
+        *player_direction = if let Ok(direction) = Direction::try_from(move_direction) {
+            direction
+        } else {
+            return;
         };
 
         *player_action = PlayerAction::Walking;
-        free_walk_ew.send(FreeWalkEvents {
-            walking_state: WalkingState::Walking,
-        });
+        turn_over_ew.send(TurnOver(PlayerAction::Walking));
 
         let destination = *player_pos + move_direction;
 
         if !level_walls.in_wall(&destination) {
             *player_pos = destination;
         }
+
         //reset the action timer to prevent the player from moving twice, if the action timer would
         //finish right after the player started moving from idle
         action_timer.reset();
     }
 
     if action_timer.finished() {
-        match move_direction {
-            GridCoords { x: 0, y: 1 } => {
-                *player_direction = Direction::Up;
-            }
-            GridCoords { x: -1, y: 0 } => {
-                *player_direction = Direction::Left;
-            }
-            GridCoords { x: 0, y: -1 } => {
-                *player_direction = Direction::Down;
-            }
-            GridCoords { x: 1, y: 0 } => {
-                *player_direction = Direction::Right;
-            }
-            _ => {
-                if *player_action != PlayerAction::Idle {
-                    free_walk_ew.send(FreeWalkEvents {
-                        walking_state: WalkingState::Idle,
-                    });
-                    *player_action = PlayerAction::Idle;
+        match Direction::try_from(move_direction) {
+            Ok(direction) => {
+                *player_direction = direction;
+
+                *player_action = PlayerAction::Walking;
+                turn_over_ew.send(TurnOver(PlayerAction::Walking));
+
+                let destination = *player_pos + move_direction;
+                if !level_walls.in_wall(&destination) {
+                    *player_pos = destination;
                 }
-                return;
             }
-        };
-
-        *player_action = PlayerAction::Walking;
-        free_walk_ew.send(FreeWalkEvents {
-            walking_state: WalkingState::Walking,
-        });
-
-        player_turn_ew.send(PlayerTurnOver);
-
-        let destination = *player_pos + move_direction;
-        if !level_walls.in_wall(&destination) {
-            *player_pos = destination;
+            Err(_) => {
+                if *player_action != PlayerAction::Idle {
+                    *player_action = PlayerAction::Idle;
+                    turn_over_ew.send(TurnOver(PlayerAction::Idle));
+                }
+            }
         }
     }
 }

@@ -7,9 +7,9 @@ use bevy_ecs_ldtk::GridCoords;
 use rand::Rng;
 
 use crate::{
-    events::{FreeWalkEvents, WalkingState},
+    events::TurnOver,
     ldtk::LevelWalls,
-    player::Player,
+    player::{Player, PlayerAction},
     AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
@@ -181,49 +181,51 @@ fn move_slime(
     >,
     player_pos: Query<&GridCoords, With<Player>>,
     level_walls: Res<LevelWalls>,
-    mut event: EventReader<FreeWalkEvents>,
+    mut turn_over_er: EventReader<TurnOver>,
 ) {
-    let player_pos = if let Ok(player_pos) = player_pos.get_single() {
-        *player_pos
-    } else {
+    let event = turn_over_er.read().next();
+    if event.is_none() {
         return;
-    };
-
-    if let Some(free_walking_event) = event.read().next() {
-        match free_walking_event.walking_state {
-            WalkingState::Walking => {
-                for (mut coords, mut slime_animation, enemy) in query.iter_mut() {
-                    let direction = match enemy.behavior_state {
-                        EnemyBehaviorState::Idle => {
-                            let mut rng = rand::thread_rng();
-                            let x = rng.gen_range(-1..=1);
-                            let y = rng.gen_range(-1..=1);
-                            GridCoords::new(x, y)
-                        }
-                        EnemyBehaviorState::Fleeing => todo!(),
-                        EnemyBehaviorState::Pursuing => {
-                            let direction = enemy.move_towards_player(&player_pos, &coords);
-                            GridCoords::new(direction.x as i32, direction.y as i32)
-                        }
-                        EnemyBehaviorState::Patrolling => todo!(),
-                    };
-
-                    if direction != GridCoords::new(0, 0) {
-                        *slime_animation = SlimeAnimationState::Walking;
-                        let destination = *coords + direction;
-                        if !level_walls.in_wall(&destination) {
-                            *coords = destination;
-                        }
-                    }
+    }
+    match event.unwrap().0 {
+        PlayerAction::Idle => {
+            for (_, mut slime_animation, _) in query.iter_mut() {
+                if *slime_animation != SlimeAnimationState::Idle {
+                    *slime_animation = SlimeAnimationState::Idle;
                 }
             }
-            WalkingState::Idle => {
-                for (_, mut slime_animation, _) in query.iter_mut() {
-                    if *slime_animation != SlimeAnimationState::Idle {
-                        *slime_animation = SlimeAnimationState::Idle;
+        }
+        PlayerAction::Walking => {
+            let player_pos = if let Ok(player_pos) = player_pos.get_single() {
+                *player_pos
+            } else {
+                return;
+            };
+
+            for (mut coords, mut slime_animation, enemy) in query.iter_mut() {
+                let direction = match enemy.behavior_state {
+                    EnemyBehaviorState::Idle => {
+                        let mut rng = rand::thread_rng();
+                        let x = rng.gen_range(-1..=1);
+                        let y = rng.gen_range(-1..=1);
+                        GridCoords::new(x, y)
+                    }
+                    EnemyBehaviorState::Fleeing => todo!(),
+                    EnemyBehaviorState::Pursuing => {
+                        let direction = enemy.move_towards_player(&player_pos, &coords);
+                        GridCoords::new(direction.x as i32, direction.y as i32)
+                    }
+                    EnemyBehaviorState::Patrolling => todo!(),
+                };
+
+                if direction != GridCoords::new(0, 0) {
+                    *slime_animation = SlimeAnimationState::Walking;
+                    let destination = *coords + direction;
+                    if !level_walls.in_wall(&destination) {
+                        *coords = destination;
                     }
                 }
             }
         }
-    }
+    };
 }
