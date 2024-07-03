@@ -10,8 +10,16 @@ pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (test).run_if(in_state(AppState::InGame)));
+        app.add_systems(
+            Update,
+            (test, move_fireball).run_if(in_state(AppState::InGame)),
+        );
     }
+}
+
+#[derive(Component)]
+struct FireBall {
+    pub speed: f32,
 }
 
 fn test(
@@ -31,14 +39,21 @@ fn test(
         let fire_ball = commands
             .spawn((
                 MaterialMesh2dBundle {
-                    mesh: Mesh2dHandle(meshes.add(Circle::new(50.0))),
+                    mesh: Mesh2dHandle(meshes.add(Circle::new(2.0))),
                     material: materials.add(Color::RED),
                     ..default()
                 },
                 Name::new("Ability1"),
+                FireBall { speed: 1.0 },
             ))
             .id();
 
         commands.entity(player).add_child(fire_ball);
+    }
+}
+
+fn move_fireball(mut fire_ball: Query<(&mut Transform, &FireBall), With<FireBall>>) {
+    for (mut transform, fire_ball) in fire_ball.iter_mut() {
+        transform.translation.x += fire_ball.speed;
     }
 }
