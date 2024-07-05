@@ -582,7 +582,7 @@ dependencies = [
 [[package]]
 name = "bevy_ecs_ldtk"
 version = "0.9.0"
-source = "git+https://github.com/theshortcut/bevy_ecs_ldtk/?branch=bevy-0.13#ef84e85e958c988e35bcd5e700d33f8cdb8015d1"
+source = "git+https://github.com/Trouv/bevy_ecs_ldtk?branch=main#617b108dfc22799047cdb4d2c84c3cdfba7e985a"
 dependencies = [
  "bevy",
  "bevy_ecs_ldtk_macros",
@@ -601,7 +601,7 @@ dependencies = [
 [[package]]
 name = "bevy_ecs_ldtk_macros"
 version = "0.9.0"
-source = "git+https://github.com/theshortcut/bevy_ecs_ldtk/?branch=bevy-0.13#ef84e85e958c988e35bcd5e700d33f8cdb8015d1"
+source = "git+https://github.com/Trouv/bevy_ecs_ldtk?branch=main#617b108dfc22799047cdb4d2c84c3cdfba7e985a"
 dependencies = [
  "proc-macro2",
  "quote",
