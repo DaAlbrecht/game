@@ -71,6 +71,9 @@ pub enum AppState {
     InGame,
 }
 
+#[derive(Component)]
+pub struct GameCursor;
+
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut camera = Camera2dBundle::default();
     camera.projection.scale = 0.2;
@@ -81,4 +84,15 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ldtk_handle: asset_server.load("game.ldtk"),
         ..Default::default()
     });
+
+    let cursor_scale = 0.1;
+    commands.spawn((
+        SpriteBundle {
+            texture: asset_server.load("Cursors_v2/Light/Arrows/Arrow1.png"),
+            transform: Transform::from_scale(Vec3::splat(cursor_scale)),
+            ..default()
+        },
+        GameCursor,
+        Name::new("Cursor"),
+    ));
 }

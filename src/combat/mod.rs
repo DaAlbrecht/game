@@ -17,6 +17,8 @@ impl Plugin for CombatPlugin {
     }
 }
 
+const ABILITY_Z_INDEX: f32 = 2.0;
+
 #[derive(Component)]
 struct FireBall {
     pub speed: f32,
@@ -27,28 +29,25 @@ fn test(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     query: Query<&ActionState<PlayerAction>, With<Player>>,
-    player: Query<Entity, With<Player>>,
+    player_pos: Query<&Transform, With<Player>>,
 ) {
     let action_state = query.single();
 
     if action_state.just_pressed(&PlayerAction::Ability1) {
         println!("Ability 1 just pressed");
 
-        let player = player.single();
-
-        let fire_ball = commands
-            .spawn((
-                MaterialMesh2dBundle {
-                    mesh: Mesh2dHandle(meshes.add(Circle::new(2.0))),
-                    material: materials.add(Color::RED),
-                    ..default()
-                },
-                Name::new("Ability1"),
-                FireBall { speed: 1.0 },
-            ))
-            .id();
-
-        commands.entity(player).add_child(fire_ball);
+        let mut fireball_transform = *player_pos.single();
+        fireball_transform.translation.z = ABILITY_Z_INDEX;
+        commands.spawn((
+            MaterialMesh2dBundle {
+                mesh: Mesh2dHandle(meshes.add(Circle::new(2.0))),
+                material: materials.add(Color::RED),
+                transform: fireball_transform,
+                ..default()
+            },
+            Name::new("Ability1"),
+            FireBall { speed: 1.0 },
+        ));
     }
 }
 

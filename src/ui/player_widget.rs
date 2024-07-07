@@ -3,7 +3,7 @@ use sickle_ui::{
     ui_builder::{UiBuilder, UiBuilderExt, UiRoot},
     ui_style::{
         SetBackgroundColorExt, SetNodeHeightExt, SetNodeLeftExt, SetNodePositionTypeExt,
-        SetNodeRightExt, SetNodeTopExt, SetNodeWidthExt,
+        SetNodeTopExt, SetNodeWidthExt,
     },
     widgets::container::UiContainerExt,
 };
@@ -11,6 +11,7 @@ use sickle_ui::{
 use super::PlayerHud;
 
 pub(crate) struct PlayerWidgetPlugin;
+
 impl Plugin for PlayerWidgetPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player_widget);
