@@ -13,15 +13,19 @@ pub struct InputPlugin;
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(InputManagerPlugin::<PlayerAction>::default())
+            .add_plugins(InputManagerPlugin::<MenuAction>::default())
             .init_resource::<CursorPos>()
+            .init_resource::<ActionState<MenuAction>>()
+            .insert_resource(MenuAction::default_input_map())
             .add_event::<PlayerMove>()
             .add_systems(Startup, hide_grab)
+            .add_systems(OnEnter(AppState::InGame), add_player_input_manager)
+            .add_systems(Update, toggle_menu)
+            .add_systems(Update, (move_player).run_if(in_state(AppState::InGame)))
             .add_systems(
                 FixedUpdate,
                 (update_cursor_pos, update_game_cursor, show_cursor).after(move_player),
-            )
-            .add_systems(OnEnter(AppState::InGame), add_input_manager)
-            .add_systems(Update, (move_player).run_if(in_state(AppState::InGame)));
+            );
     }
 }
 
@@ -61,6 +65,22 @@ impl PlayerAction {
     }
 }
 
+#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
+pub enum MenuAction {
+    Pause,
+}
+
+impl MenuAction {
+    fn default_input_map() -> InputMap<Self> {
+        use MenuAction::*;
+        let mut input_map = InputMap::default();
+
+        input_map.insert(Pause, KeyCode::Escape);
+
+        input_map
+    }
+}
+
 #[derive(Bundle)]
 struct PlayerInputBundle {
     input_manager: InputManagerBundle<PlayerAction>,
@@ -95,7 +115,7 @@ impl PlayerInputBundle {
     }
 }
 
-fn add_input_manager(mut commands: Commands, player: Query<Entity, With<Player>>) {
+fn add_player_input_manager(mut commands: Commands, player: Query<Entity, With<Player>>) {
     let player = if let Ok(player) = player.get_single() {
         player
     } else {
@@ -243,5 +263,15 @@ fn show_cursor(
         *cursor_visivility = Visibility::Visible;
     } else {
         *cursor_visivility = Visibility::Hidden;
+    }
+}
+
+fn toggle_menu(
+    action_state: Res<ActionState<MenuAction>>,
+    mut windows: Query<&mut Window, With<PrimaryWindow>>,
+) {
+    if action_state.pressed(&MenuAction::Pause) {
+        let mut primary_window = windows.single_mut();
+        primary_window.cursor.visible = !primary_window.cursor.visible;
     }
 }

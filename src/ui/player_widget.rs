@@ -34,10 +34,10 @@ impl<'w, 's> PlayerWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
                     .style()
                     .position_type(PositionType::Absolute)
                     .left(Val::Percent(10.0))
-                    .top(Val::Percent(80.0))
+                    .top(Val::Percent(70.0))
                     .background_color(Color::GREEN)
-                    .width(Val::Percent(10.0))
-                    .height(Val::Percent(10.0));
+                    .width(Val::Percent(20.0))
+                    .height(Val::Percent(20.0));
             },
         )
     }
