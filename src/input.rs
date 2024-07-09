@@ -24,7 +24,13 @@ impl Plugin for InputPlugin {
             .add_systems(Update, (move_player).run_if(in_state(AppState::InGame)))
             .add_systems(
                 FixedUpdate,
-                (update_cursor_pos, update_game_cursor, show_cursor).after(move_player),
+                (update_cursor_pos, update_game_cursor).after(move_player),
+            )
+            .add_systems(
+                FixedUpdate,
+                (show_cursor)
+                    .after(update_game_cursor)
+                    .run_if(in_state(AppState::InGame)),
             );
     }
 }
@@ -269,9 +275,31 @@ fn show_cursor(
 fn toggle_menu(
     action_state: Res<ActionState<MenuAction>>,
     mut windows: Query<&mut Window, With<PrimaryWindow>>,
+    mut game_cursor: Query<&mut Visibility, With<GameCursor>>,
+    state: Res<State<AppState>>,
+    mut next_state: ResMut<NextState<AppState>>,
 ) {
-    if action_state.pressed(&MenuAction::Pause) {
-        let mut primary_window = windows.single_mut();
-        primary_window.cursor.visible = !primary_window.cursor.visible;
+    match state.get() {
+        AppState::Loading => return,
+        AppState::InGame => {
+            if action_state.just_pressed(&MenuAction::Pause) {
+                let mut primary_window = windows.single_mut();
+                primary_window.cursor.visible = !primary_window.cursor.visible;
+
+                let mut game_cursor = game_cursor.single_mut();
+                *game_cursor = Visibility::Hidden;
+                next_state.set(AppState::Menu);
+            }
+        }
+        AppState::Menu => {
+            if action_state.just_pressed(&MenuAction::Pause) {
+                let mut primary_window = windows.single_mut();
+                primary_window.cursor.visible = !primary_window.cursor.visible;
+
+                let mut game_cursor = game_cursor.single_mut();
+                *game_cursor = Visibility::Visible;
+                next_state.set(AppState::InGame);
+            }
+        }
     }
 }

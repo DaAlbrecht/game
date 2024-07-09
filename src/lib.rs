@@ -69,6 +69,7 @@ pub enum AppState {
     #[default]
     Loading,
     InGame,
+    Menu,
 }
 
 #[derive(Component)]
