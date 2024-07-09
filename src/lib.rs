@@ -15,6 +15,9 @@ pub mod ui;
 pub const GRID_SIZE: i32 = 16;
 pub const ACTION_DELAY: f32 = 0.2;
 
+pub const CURSOR_Z_INDEX: f32 = 100.0;
+pub const ABILITY_Z_INDEX: f32 = 11.0;
+
 #[derive(Component, Reflect)]
 pub struct Health(i32);
 
@@ -90,7 +93,11 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         SpriteBundle {
             texture: asset_server.load("Cursors_v2/Light/Arrows/Arrow1.png"),
-            transform: Transform::from_scale(Vec3::splat(cursor_scale)),
+            transform: Transform {
+                translation: Vec3::new(0.0, 0.0, CURSOR_Z_INDEX),
+                scale: Vec3::splat(cursor_scale),
+                ..default()
+            },
             ..default()
         },
         GameCursor,

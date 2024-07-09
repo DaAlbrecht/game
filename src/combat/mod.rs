@@ -4,7 +4,7 @@ use bevy::{
 };
 use leafwing_input_manager::action_state::ActionState;
 
-use crate::{input::PlayerAction, player::Player, AppState};
+use crate::{input::PlayerAction, player::Player, AppState, ABILITY_Z_INDEX};
 
 pub struct CombatPlugin;
 
@@ -16,8 +16,6 @@ impl Plugin for CombatPlugin {
         );
     }
 }
-
-const ABILITY_Z_INDEX: f32 = 2.0;
 
 #[derive(Component)]
 struct FireBall {

@@ -5,7 +5,7 @@ use leafwing_input_manager::prelude::*;
 use crate::{
     camera::MainCamera,
     player::{Player, PlayerMove},
-    AppState, GameCursor,
+    AppState, GameCursor, CURSOR_Z_INDEX,
 };
 
 pub struct InputPlugin;
@@ -246,7 +246,7 @@ fn update_game_cursor(
     };
 
     let cursor_pos = cursor_pos.world_coords;
-    let cursor_pos = Vec3::new(cursor_pos.x, cursor_pos.y, 3.0);
+    let cursor_pos = Vec3::new(cursor_pos.x, cursor_pos.y, CURSOR_Z_INDEX);
     cursor_transform.translation = cursor_pos;
 }
 
