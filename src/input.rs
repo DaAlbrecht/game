@@ -280,7 +280,7 @@ fn toggle_menu(
     mut next_state: ResMut<NextState<AppState>>,
 ) {
     match state.get() {
-        AppState::Loading => return,
+        AppState::Loading => (),
         AppState::InGame => {
             if action_state.just_pressed(&MenuAction::Pause) {
                 let mut primary_window = windows.single_mut();

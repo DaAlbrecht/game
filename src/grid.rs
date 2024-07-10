@@ -65,16 +65,14 @@ impl GridPosition {
     }
 
     pub fn heuristic(&self, goal: &GridCoords) -> u32 {
-        let dx = (self.0.x - goal.x).abs() as u32;
-        let dy = (self.0.y - goal.y).abs() as u32;
+        let dx = (self.0.x - goal.x).unsigned_abs();
+        let dy = (self.0.y - goal.y).unsigned_abs();
 
         dx + dy
     }
 
     pub fn pathfind(&self, goal: GridCoords, level_walls: &LevelWalls) -> Option<Vec<GridCoords>> {
         let start = self;
-        info!("start: {:?}", start);
-        info!("goal: {:?}", goal);
         let result = astar(
             start,
             |p| {

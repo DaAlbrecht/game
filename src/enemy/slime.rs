@@ -4,7 +4,6 @@ use bevy::{
 };
 use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
-use rand::Rng;
 
 use crate::{
     events::TurnOver,
@@ -205,20 +204,16 @@ fn move_slime(
             for (mut coords, mut slime_animation, enemy) in query.iter_mut() {
                 let direction = match enemy.behavior_state {
                     EnemyBehaviorState::Idle => {
-                        let mut rng = rand::thread_rng();
-                        let x = rng.gen_range(-1..=1);
-                        let y = rng.gen_range(-1..=1);
-                        GridCoords::new(x, y)
+                        enemy.move_towards_player(&player_pos, &coords, &level_walls)
                     }
                     EnemyBehaviorState::Fleeing => todo!(),
                     EnemyBehaviorState::Pursuing => {
                         let direction =
                             enemy.move_towards_player(&player_pos, &coords, &level_walls);
-                        GridCoords::new(direction.x as i32, direction.y as i32)
+                        GridCoords::new(direction.x, direction.y)
                     }
                     EnemyBehaviorState::Patrolling => todo!(),
                 };
-                info!("direction: {:?}", direction);
 
                 if direction != GridCoords::new(0, 0) {
                     *slime_animation = SlimeAnimationState::Walking;

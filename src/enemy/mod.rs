@@ -1,11 +1,9 @@
 use bevy::prelude::*;
-use bevy_ecs_ldtk::{utils::grid_coords_to_translation, GridCoords};
+use bevy_ecs_ldtk::GridCoords;
 use rand::Rng;
 pub mod slime;
 
-use crate::{
-    events::CombatEvent, grid::GridPosition, ldtk::LevelWalls, player::Player, AppState, GRID_SIZE,
-};
+use crate::{events::CombatEvent, grid::GridPosition, ldtk::LevelWalls, player::Player, AppState};
 
 pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
@@ -101,7 +99,6 @@ impl Enemy {
                 let next_pos = if let Some(path) = path {
                     // if there is only the starting position and the destination left in the path, return 0,0 to stop
                     // in front of the player
-                    info!("path: {:?}", path);
                     if path.len() >= 3 {
                         *path.get(1).unwrap() - *enemy_pos
                     } else {
