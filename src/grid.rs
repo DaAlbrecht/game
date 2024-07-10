@@ -73,6 +73,8 @@ impl GridPosition {
 
     pub fn pathfind(&self, goal: GridCoords, level_walls: &LevelWalls) -> Option<Vec<GridCoords>> {
         let start = self;
+        info!("start: {:?}", start);
+        info!("goal: {:?}", goal);
         let result = astar(
             start,
             |p| {

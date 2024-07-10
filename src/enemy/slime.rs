@@ -214,11 +214,11 @@ fn move_slime(
                     EnemyBehaviorState::Pursuing => {
                         let direction =
                             enemy.move_towards_player(&player_pos, &coords, &level_walls);
-                        info!("direction: {:?}", direction);
                         GridCoords::new(direction.x as i32, direction.y as i32)
                     }
                     EnemyBehaviorState::Patrolling => todo!(),
                 };
+                info!("direction: {:?}", direction);
 
                 if direction != GridCoords::new(0, 0) {
                     *slime_animation = SlimeAnimationState::Walking;

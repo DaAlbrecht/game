@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::{utils::grid_coords_to_translation, GridCoords};
+use rand::Rng;
 pub mod slime;
 
 use crate::{
@@ -85,40 +86,31 @@ impl Enemy {
         player_pos: &GridCoords,
         enemy_pos: &GridCoords,
         level_walls: &LevelWalls,
-    ) -> Vec2 {
-        let grid_size = IVec2::splat(GRID_SIZE);
-
+    ) -> GridCoords {
         match self.behavior_state {
             EnemyBehaviorState::Idle => {
-                if (player_pos.x - enemy_pos.x).abs() < 2 && (player_pos.y - enemy_pos.y).abs() < 2
-                {
-                    return Vec2::ZERO;
-                }
-
-                let player_transform = grid_coords_to_translation(*player_pos, grid_size);
-                let enemy_transfrom = grid_coords_to_translation(*enemy_pos, grid_size);
-
-                (player_transform - enemy_transfrom).normalize().round()
+                let mut rng = rand::thread_rng();
+                let x = rng.gen_range(-1..=1);
+                let y = rng.gen_range(-1..=1);
+                GridCoords::new(x, y)
             }
             EnemyBehaviorState::Fleeing => todo!(),
             EnemyBehaviorState::Pursuing => {
                 let start_pos = GridPosition::new(enemy_pos.to_owned());
                 let path = start_pos.pathfind(player_pos.to_owned(), level_walls);
-                info!("Path: {:?}", path);
-                info!("Start pos: {:?}", start_pos);
-                info!("Player pos: {:?}", player_pos);
-                info!(
-                    "Player pos in vec2: {:?}",
-                    grid_coords_to_translation(*player_pos, grid_size)
-                );
-                if let Some(path) = path {
-                    let next_pos = path.get(1).unwrap();
-                    let next_pos = grid_coords_to_translation(*next_pos, grid_size);
-                    info!("Next pos: {:?}", next_pos);
-                    return next_pos;
+                let next_pos = if let Some(path) = path {
+                    // if there is only the starting position and the destination left in the path, return 0,0 to stop
+                    // in front of the player
+                    info!("path: {:?}", path);
+                    if path.len() >= 3 {
+                        *path.get(1).unwrap() - *enemy_pos
+                    } else {
+                        GridCoords::new(0, 0)
+                    }
+                } else {
+                    GridCoords::new(0, 0)
                 };
-                info!("No path found");
-                panic!("No path found");
+                next_pos
             }
             EnemyBehaviorState::Patrolling => todo!(),
         }
