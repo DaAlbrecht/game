@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
+use pathfinding::prelude::astar;
 
 use crate::camera::MainCamera;
 use crate::ldtk::{LevelWalls, Stair, Wall};
@@ -18,6 +19,73 @@ impl Plugin for GridPlugin {
             )
                 .in_set(GameplaySet::InputSet),
         );
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Successor {
+    pub coords: GridPosition,
+    pub cost: u32,
+}
+
+#[derive(Clone, Copy, Debug, Hash, PartialEq)]
+pub struct GridPosition(pub GridCoords);
+
+impl Eq for GridPosition {}
+
+impl GridPosition {
+    pub fn new(grid_coords: GridCoords) -> Self {
+        Self(grid_coords)
+    }
+
+    pub fn successors(&self, coords: &GridCoords, level_walls: &LevelWalls) -> Vec<Successor> {
+        let mut successors = Vec::new();
+
+        for x in -1..=1 {
+            for y in -1..=1 {
+                if x == 0 && y == 0 {
+                    continue;
+                }
+
+                let new_coords = GridCoords {
+                    x: coords.x + x,
+                    y: coords.y + y,
+                };
+
+                if !level_walls.wall_locations.contains(&new_coords) {
+                    successors.push(Successor {
+                        coords: GridPosition(new_coords),
+                        cost: 1,
+                    });
+                }
+            }
+        }
+
+        successors
+    }
+
+    pub fn heuristic(&self, goal: &GridCoords) -> u32 {
+        let dx = (self.0.x - goal.x).abs() as u32;
+        let dy = (self.0.y - goal.y).abs() as u32;
+
+        dx + dy
+    }
+
+    pub fn pathfind(&self, goal: GridCoords, level_walls: &LevelWalls) -> Option<Vec<GridCoords>> {
+        let start = self;
+        let result = astar(
+            start,
+            |p| {
+                self.successors(&p.0, level_walls)
+                    .iter()
+                    .map(|s| (s.coords, s.cost))
+                    .collect::<Vec<_>>()
+            },
+            |p| p.heuristic(&goal),
+            |p| p.0 == goal,
+        );
+
+        result.map(|(path, _)| path.iter().map(|p| p.0).collect())
     }
 }
 

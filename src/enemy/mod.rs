@@ -2,7 +2,9 @@ use bevy::prelude::*;
 use bevy_ecs_ldtk::{utils::grid_coords_to_translation, GridCoords};
 pub mod slime;
 
-use crate::{events::CombatEvent, player::Player, AppState, GRID_SIZE};
+use crate::{
+    events::CombatEvent, grid::GridPosition, ldtk::LevelWalls, player::Player, AppState, GRID_SIZE,
+};
 
 pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
@@ -78,16 +80,47 @@ fn show_healthbar(
 }
 
 impl Enemy {
-    pub fn move_towards_player(&self, player_pos: &GridCoords, enemy_pos: &GridCoords) -> Vec2 {
+    pub fn move_towards_player(
+        &self,
+        player_pos: &GridCoords,
+        enemy_pos: &GridCoords,
+        level_walls: &LevelWalls,
+    ) -> Vec2 {
         let grid_size = IVec2::splat(GRID_SIZE);
 
-        if (player_pos.x - enemy_pos.x).abs() < 2 && (player_pos.y - enemy_pos.y).abs() < 2 {
-            return Vec2::ZERO;
+        match self.behavior_state {
+            EnemyBehaviorState::Idle => {
+                if (player_pos.x - enemy_pos.x).abs() < 2 && (player_pos.y - enemy_pos.y).abs() < 2
+                {
+                    return Vec2::ZERO;
+                }
+
+                let player_transform = grid_coords_to_translation(*player_pos, grid_size);
+                let enemy_transfrom = grid_coords_to_translation(*enemy_pos, grid_size);
+
+                (player_transform - enemy_transfrom).normalize().round()
+            }
+            EnemyBehaviorState::Fleeing => todo!(),
+            EnemyBehaviorState::Pursuing => {
+                let start_pos = GridPosition::new(enemy_pos.to_owned());
+                let path = start_pos.pathfind(player_pos.to_owned(), level_walls);
+                info!("Path: {:?}", path);
+                info!("Start pos: {:?}", start_pos);
+                info!("Player pos: {:?}", player_pos);
+                info!(
+                    "Player pos in vec2: {:?}",
+                    grid_coords_to_translation(*player_pos, grid_size)
+                );
+                if let Some(path) = path {
+                    let next_pos = path.get(1).unwrap();
+                    let next_pos = grid_coords_to_translation(*next_pos, grid_size);
+                    info!("Next pos: {:?}", next_pos);
+                    return next_pos;
+                };
+                info!("No path found");
+                panic!("No path found");
+            }
+            EnemyBehaviorState::Patrolling => todo!(),
         }
-
-        let player_transform = grid_coords_to_translation(*player_pos, grid_size);
-        let enemy_transfrom = grid_coords_to_translation(*enemy_pos, grid_size);
-
-        (player_transform - enemy_transfrom).normalize().round()
     }
 }
