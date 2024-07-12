@@ -16,9 +16,53 @@ impl Plugin for GridPlugin {
                 translate_grid_coords_entities,
                 cache_wall_locations,
                 check_stairs,
+                update_colliders,
             )
                 .in_set(GameplaySet::InputSet),
-        );
+        )
+        .register_type::<Collider>();
+    }
+}
+
+#[derive(Component, Copy, Clone, Debug, Reflect)]
+pub struct Collider {
+    pub tile_width: i32,
+    pub tile_height: i32,
+    pub position: GridCoords,
+}
+
+impl Collider {
+    pub fn new(tile_width: i32, tile_height: i32, position: GridCoords) -> Self {
+        Self {
+            tile_width,
+            tile_height,
+            position,
+        }
+    }
+
+    pub fn get_occupied_coords(&self) -> Vec<GridCoords> {
+        let mut occupied_coords = Vec::new();
+
+        for x in 0..self.tile_width {
+            for y in 0..self.tile_height {
+                occupied_coords.push(GridCoords {
+                    x: self.position.x + x,
+                    y: self.position.y + y,
+                });
+            }
+        }
+
+        occupied_coords
+    }
+}
+
+impl Default for Collider {
+    fn default() -> Self {
+        Self {
+            tile_width: 1,
+            tile_height: 1,
+            position: GridCoords::default(),
+        }
     }
 }
 
@@ -38,7 +82,12 @@ impl GridPosition {
         Self(grid_coords)
     }
 
-    pub fn successors(&self, coords: &GridCoords, level_walls: &LevelWalls) -> Vec<Successor> {
+    pub fn successors(
+        &self,
+        coords: &GridCoords,
+        level_walls: &LevelWalls,
+        occupied_coords: &[GridCoords],
+    ) -> Vec<Successor> {
         let mut successors = Vec::new();
 
         for x in -1..=1 {
@@ -51,6 +100,10 @@ impl GridPosition {
                     x: coords.x + x,
                     y: coords.y + y,
                 };
+
+                if occupied_coords.contains(&new_coords) {
+                    continue;
+                }
 
                 if !level_walls.wall_locations.contains(&new_coords) {
                     successors.push(Successor {
@@ -71,12 +124,18 @@ impl GridPosition {
         dx + dy
     }
 
-    pub fn pathfind(&self, goal: GridCoords, level_walls: &LevelWalls) -> Option<Vec<GridCoords>> {
+    pub fn pathfind(
+        &self,
+        goal: GridCoords,
+        level_walls: &LevelWalls,
+        occupied_coords: &[GridCoords],
+    ) -> Option<Vec<GridCoords>> {
         let start = self;
+
         let result = astar(
             start,
             |p| {
-                self.successors(&p.0, level_walls)
+                self.successors(&p.0, level_walls, occupied_coords)
                     .iter()
                     .map(|s| (s.coords, s.cost))
                     .collect::<Vec<_>>()
@@ -155,5 +214,11 @@ fn check_stairs(
 
         indices.level += 1;
         next_state.set(AppState::Loading);
+    }
+}
+
+pub fn update_colliders(mut query: Query<(&GridCoords, &mut Collider), With<Collider>>) {
+    for (coords, mut collider) in query.iter_mut() {
+        collider.position = *coords;
     }
 }

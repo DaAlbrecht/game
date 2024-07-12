@@ -84,6 +84,7 @@ impl Enemy {
         player_pos: &GridCoords,
         enemy_pos: &GridCoords,
         level_walls: &LevelWalls,
+        occupied_coords: &[GridCoords],
     ) -> GridCoords {
         match self.behavior_state {
             EnemyBehaviorState::Idle => {
@@ -95,7 +96,7 @@ impl Enemy {
             EnemyBehaviorState::Fleeing => todo!(),
             EnemyBehaviorState::Pursuing => {
                 let start_pos = GridPosition::new(enemy_pos.to_owned());
-                let path = start_pos.pathfind(player_pos.to_owned(), level_walls);
+                let path = start_pos.pathfind(player_pos.to_owned(), level_walls, occupied_coords);
                 let next_pos = if let Some(path) = path {
                     // if there is only the starting position and the destination left in the path, return 0,0 to stop
                     // in front of the player

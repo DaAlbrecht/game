@@ -67,6 +67,7 @@ pub enum PlayerAction {
     #[default]
     Idle,
     Walking,
+    Combat,
 }
 
 #[derive(Component)]
@@ -265,6 +266,10 @@ fn update_player_position(
         Some(PlayerMove(direction)) => *direction,
         None => return,
     };
+
+    if *player_action == PlayerAction::Combat {
+        return;
+    }
 
     //If the player was idling, we want to start walking immediately and not wait for the action timer to finish
     if *player_action == PlayerAction::Idle {

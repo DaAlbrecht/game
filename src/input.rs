@@ -12,7 +12,7 @@ pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(InputManagerPlugin::<PlayerAction>::default())
+        app.add_plugins(InputManagerPlugin::<PlayerInputAction>::default())
             .add_plugins(InputManagerPlugin::<MenuAction>::default())
             .init_resource::<CursorPos>()
             .init_resource::<ActionState<MenuAction>>()
@@ -43,7 +43,7 @@ pub struct CursorPos {
 }
 
 #[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug, Reflect)]
-pub enum PlayerAction {
+pub enum PlayerInputAction {
     Up,
     Down,
     Left,
@@ -52,20 +52,20 @@ pub enum PlayerAction {
     Ability2,
 }
 
-impl PlayerAction {
+impl PlayerInputAction {
     const DIRECTIONS: [Self; 4] = [
-        PlayerAction::Up,
-        PlayerAction::Down,
-        PlayerAction::Left,
-        PlayerAction::Right,
+        PlayerInputAction::Up,
+        PlayerInputAction::Down,
+        PlayerInputAction::Left,
+        PlayerInputAction::Right,
     ];
 
     fn direction(self) -> Option<GridCoords> {
         match self {
-            PlayerAction::Up => Some(GridCoords::new(0, 1)),
-            PlayerAction::Down => Some(GridCoords::new(0, -1)),
-            PlayerAction::Left => Some(GridCoords::new(-1, 0)),
-            PlayerAction::Right => Some(GridCoords::new(1, 0)),
+            PlayerInputAction::Up => Some(GridCoords::new(0, 1)),
+            PlayerInputAction::Down => Some(GridCoords::new(0, -1)),
+            PlayerInputAction::Left => Some(GridCoords::new(-1, 0)),
+            PlayerInputAction::Right => Some(GridCoords::new(1, 0)),
             _ => None,
         }
     }
@@ -89,12 +89,12 @@ impl MenuAction {
 
 #[derive(Bundle)]
 struct PlayerInputBundle {
-    input_manager: InputManagerBundle<PlayerAction>,
+    input_manager: InputManagerBundle<PlayerInputAction>,
 }
 
 impl PlayerInputBundle {
-    fn default_input_map() -> InputMap<PlayerAction> {
-        use PlayerAction::*;
+    fn default_input_map() -> InputMap<PlayerInputAction> {
+        use PlayerInputAction::*;
         let mut input_map = InputMap::default();
 
         // Movement
@@ -134,11 +134,11 @@ fn add_player_input_manager(mut commands: Commands, player: Query<Entity, With<P
 }
 
 fn move_player(
-    query: Query<&ActionState<PlayerAction>, With<Player>>,
+    query: Query<&ActionState<PlayerInputAction>, With<Player>>,
     mut move_direction: EventWriter<PlayerMove>,
 ) {
     let action_state = query.single();
-    for input_direction in PlayerAction::DIRECTIONS {
+    for input_direction in PlayerInputAction::DIRECTIONS {
         if action_state.pressed(&input_direction) {
             if let Some(direction) = input_direction.direction() {
                 move_direction.send(PlayerMove(direction));

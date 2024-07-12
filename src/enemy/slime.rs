@@ -7,6 +7,7 @@ use bevy_ecs_ldtk::GridCoords;
 
 use crate::{
     events::TurnOver,
+    grid::Collider,
     ldtk::LevelWalls,
     player::{Player, PlayerAction},
     AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
@@ -95,6 +96,7 @@ fn patch_slime(
             slime_animation_indices,
             SlimeAnimationState::default(),
             Enemy::default(),
+            Collider::default(),
         ));
 
         let healt_bar = commands
@@ -180,12 +182,14 @@ fn move_slime(
     >,
     player_pos: Query<&GridCoords, With<Player>>,
     level_walls: Res<LevelWalls>,
+    colliders: Query<&Collider>,
     mut turn_over_er: EventReader<TurnOver>,
 ) {
     let event = turn_over_er.read().next();
     if event.is_none() {
         return;
     }
+
     match event.unwrap().0 {
         PlayerAction::Idle => {
             for (_, mut slime_animation, _) in query.iter_mut() {
@@ -201,15 +205,28 @@ fn move_slime(
                 return;
             };
 
+            let mut occupied_coords: Vec<GridCoords> = Vec::new();
+
+            for collider in colliders.iter() {
+                occupied_coords.extend(collider.get_occupied_coords());
+            }
+
             for (mut coords, mut slime_animation, enemy) in query.iter_mut() {
                 let direction = match enemy.behavior_state {
-                    EnemyBehaviorState::Idle => {
-                        enemy.move_towards_player(&player_pos, &coords, &level_walls)
-                    }
+                    EnemyBehaviorState::Idle => enemy.move_towards_player(
+                        &player_pos,
+                        &coords,
+                        &level_walls,
+                        &occupied_coords,
+                    ),
                     EnemyBehaviorState::Fleeing => todo!(),
                     EnemyBehaviorState::Pursuing => {
-                        let direction =
-                            enemy.move_towards_player(&player_pos, &coords, &level_walls);
+                        let direction = enemy.move_towards_player(
+                            &player_pos,
+                            &coords,
+                            &level_walls,
+                            &occupied_coords,
+                        );
                         GridCoords::new(direction.x, direction.y)
                     }
                     EnemyBehaviorState::Patrolling => todo!(),
@@ -219,10 +236,14 @@ fn move_slime(
                     *slime_animation = SlimeAnimationState::Walking;
                     let destination = *coords + direction;
                     if !level_walls.in_wall(&destination) {
+                        let prev_position = *coords;
                         *coords = destination;
+                        occupied_coords.retain(|&x| x != prev_position);
+                        occupied_coords.push(destination);
                     }
                 }
             }
         }
+        PlayerAction::Combat => (),
     };
 }
