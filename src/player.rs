@@ -3,8 +3,8 @@ use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
 use crate::{
-    events::TurnOver, ldtk::LevelWalls, ActionTimer, AnimationTimer, AppState, Health,
-    IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
+    events::TurnOver, grid::Collider, ldtk::LevelWalls, ActionTimer, AnimationTimer, AppState,
+    Health, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
 pub struct PlayerPlugin;
@@ -242,6 +242,7 @@ fn update_player_position(
     mut players: Query<(&mut GridCoords, &mut Direction, &mut PlayerAction), With<Player>>,
     mut move_direction_er: EventReader<PlayerMove>,
     mut action_timer: Query<&mut ActionTimer, With<Player>>,
+    colliders: Query<&Collider, Without<Player>>,
     mut turn_over_ew: EventWriter<TurnOver>,
     level_walls: Res<LevelWalls>,
     time: Res<Time>,
@@ -284,6 +285,16 @@ fn update_player_position(
 
         let destination = *player_pos + move_direction;
 
+        for collider in colliders.iter() {
+            if collider
+                .get_occupied_coords()
+                .iter()
+                .any(|&coords| coords == destination)
+            {
+                return;
+            }
+        }
+
         if !level_walls.in_wall(&destination) {
             *player_pos = destination;
         }
@@ -302,6 +313,17 @@ fn update_player_position(
                 turn_over_ew.send(TurnOver(PlayerAction::Walking));
 
                 let destination = *player_pos + move_direction;
+
+                for collider in colliders.iter() {
+                    if collider
+                        .get_occupied_coords()
+                        .iter()
+                        .any(|&coords| coords == destination)
+                    {
+                        return;
+                    }
+                }
+
                 if !level_walls.in_wall(&destination) {
                     *player_pos = destination;
                 }

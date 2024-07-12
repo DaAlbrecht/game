@@ -88,10 +88,21 @@ impl Enemy {
     ) -> GridCoords {
         match self.behavior_state {
             EnemyBehaviorState::Idle => {
-                let mut rng = rand::thread_rng();
-                let x = rng.gen_range(-1..=1);
-                let y = rng.gen_range(-1..=1);
-                GridCoords::new(x, y)
+                let next_pos;
+                loop {
+                    let mut rng = rand::thread_rng();
+                    let x = rng.gen_range(-1..=1);
+                    let y = rng.gen_range(-1..=1);
+                    let new_coords = GridCoords::new(enemy_pos.x + x, enemy_pos.y + y);
+                    if !level_walls.wall_locations.contains(&new_coords)
+                        && !occupied_coords.contains(&new_coords)
+                        && new_coords != *enemy_pos
+                    {
+                        next_pos = GridCoords::new(x, y);
+                        break;
+                    }
+                }
+                next_pos
             }
             EnemyBehaviorState::Fleeing => todo!(),
             EnemyBehaviorState::Pursuing => {
