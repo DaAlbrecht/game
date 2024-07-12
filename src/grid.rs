@@ -86,7 +86,7 @@ impl GridPosition {
         &self,
         coords: &GridCoords,
         level_walls: &LevelWalls,
-        occupied_coords: &[GridCoords],
+        occupied_coords: Option<&[GridCoords]>,
     ) -> Vec<Successor> {
         let mut successors = Vec::new();
 
@@ -101,8 +101,10 @@ impl GridPosition {
                     y: coords.y + y,
                 };
 
-                if occupied_coords.contains(&new_coords) {
-                    continue;
+                if let Some(occupied_coords) = occupied_coords {
+                    if occupied_coords.contains(&new_coords) {
+                        continue;
+                    }
                 }
 
                 if !level_walls.wall_locations.contains(&new_coords) {
@@ -128,7 +130,7 @@ impl GridPosition {
         &self,
         goal: GridCoords,
         level_walls: &LevelWalls,
-        occupied_coords: &[GridCoords],
+        occupied_coords: Option<&[GridCoords]>,
     ) -> Option<Vec<GridCoords>> {
         let start = self;
 

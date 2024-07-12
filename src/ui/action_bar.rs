@@ -52,7 +52,7 @@ impl<'w, 's> ActionBarWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
                         .width(Val::Px(50.0))
                         .height(Val::Px(50.0))
                         .margin(margin)
-                        .image("fireball.png");
+                        .image("fireball_on_cd.png");
 
                     let mut label = column.label(LabelConfig::default());
 
