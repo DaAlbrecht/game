@@ -1,6 +1,9 @@
 use bevy::{prelude::*, window::PrimaryWindow};
+use bevy_ecs_ldtk::{utils::translation_to_grid_coords, GridCoords};
 
-use crate::{camera::MainCamera, input::move_player, AppState, CURSOR_Z_INDEX};
+use crate::{
+    camera::MainCamera, enemy::Enemy, input::move_player, AppState, CURSOR_Z_INDEX, GRID_SIZE,
+};
 
 pub struct GameCursorPlugin;
 
@@ -14,7 +17,7 @@ impl Plugin for GameCursorPlugin {
             )
             .add_systems(
                 FixedUpdate,
-                (show_cursor)
+                (show_cursor, cursor_mode)
                     .after(update_game_cursor)
                     .run_if(in_state(AppState::InGame)),
             );
@@ -29,6 +32,15 @@ pub struct CursorPos {
     pub world_coords: Vec3,
     pub screen_coords: Vec3,
     pub ui_coords: Vec3,
+}
+
+impl CursorPos {
+    pub fn world_position(&self) -> GridCoords {
+        translation_to_grid_coords(
+            self.world_coords.truncate(),
+            IVec2::new(GRID_SIZE, GRID_SIZE),
+        )
+    }
 }
 
 //Special thanks to RaminKav from: https://github.com/RaminKav/BevySurvivalGame/tree/master
@@ -152,4 +164,29 @@ fn show_cursor(
     } else {
         *cursor_visivility = Visibility::Hidden;
     }
+}
+
+fn cursor_mode(
+    cursor_pos: Res<CursorPos>,
+    mut cursor_image: Query<&mut Handle<Image>, With<GameCursor>>,
+    enemies_pos: Query<&GridCoords, With<Enemy>>,
+    asset_server: Res<AssetServer>,
+) {
+    let cursor_pos = cursor_pos.world_position();
+    let mut cursor_image = if let Ok(cursor_image) = cursor_image.get_single_mut() {
+        cursor_image
+    } else {
+        error!("No image handle found for game cursor, expected to always find one");
+        return;
+    };
+
+    for enemy_pos in enemies_pos.iter() {
+        info!("Enemy pos: {:?}", enemy_pos);
+        info!("Cursor pos: {:?}", cursor_pos);
+        if cursor_pos == *enemy_pos {
+            *cursor_image = asset_server.load("Cursors_v2/Light/Arrows/Arrow4.png");
+            return;
+        }
+    }
+    *cursor_image = asset_server.load("Cursors_v2/Light/Arrows/Arrow1.png");
 }
