@@ -1,7 +1,9 @@
 use self::{action_bar::ActionBarPlugin, player_widget::PlayerWidgetPlugin};
 use bevy::prelude::*;
+use game_cursor::GameCursorPlugin;
 
 mod action_bar;
+pub mod game_cursor;
 mod player_widget;
 
 pub struct UiPlugin;
@@ -13,6 +15,7 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(ActionBarPlugin)
             .add_plugins(PlayerWidgetPlugin)
+            .add_plugins(GameCursorPlugin)
             .add_systems(Update, toggle_ui);
     }
 }

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use camera::MainCamera;
+use ui::game_cursor::GameCursor;
 pub mod camera;
 
 pub mod combat;
@@ -74,9 +75,6 @@ pub enum AppState {
     InGame,
     Menu,
 }
-
-#[derive(Component)]
-pub struct GameCursor;
 
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut camera = Camera2dBundle::default();
