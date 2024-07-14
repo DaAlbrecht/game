@@ -30,6 +30,11 @@ impl<'w, 's> PlayerWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
         self.container(
             (ImageBundle::default(), (PlayerWidget, PlayerHud)),
             |player_widget| {
+                let entity = player_widget.id();
+                player_widget
+                    .commands()
+                    .entity(entity)
+                    .insert(Name::new("PlayerWidget"));
                 player_widget
                     .style()
                     .position_type(PositionType::Absolute)

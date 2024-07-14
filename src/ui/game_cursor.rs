@@ -181,8 +181,6 @@ fn cursor_mode(
     };
 
     for enemy_pos in enemies_pos.iter() {
-        info!("Enemy pos: {:?}", enemy_pos);
-        info!("Cursor pos: {:?}", cursor_pos);
         if cursor_pos == *enemy_pos {
             *cursor_image = asset_server.load("Cursors_v2/Light/Arrows/Arrow4.png");
             return;

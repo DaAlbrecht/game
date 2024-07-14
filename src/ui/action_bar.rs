@@ -23,6 +23,9 @@ impl Plugin for ActionBarPlugin {
 }
 
 #[derive(Component)]
+struct AbilitySlot;
+
+#[derive(Component)]
 struct ActionBarWidget;
 
 pub trait ActionBarWidgetExt<'w, 's> {
@@ -34,6 +37,11 @@ impl<'w, 's> ActionBarWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
         self.container(
             (ImageBundle::default(), (ActionBarWidget, PlayerHud)),
             |action_bar| {
+                let entity = action_bar.id();
+                action_bar
+                    .commands()
+                    .entity(entity)
+                    .insert(Name::new("ActionBarWidget"));
                 action_bar
                     .style()
                     .position_type(PositionType::Absolute)
@@ -47,6 +55,11 @@ impl<'w, 's> ActionBarWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
                 let mut row = action_bar.row(|_| {});
 
                 row.container(ImageBundle::default(), |column| {
+                    let entity = column.id();
+                    column
+                        .commands()
+                        .entity(entity)
+                        .insert((Name::new("Q_Ability_slot"), AbilitySlot));
                     column
                         .style()
                         .width(Val::Px(50.0))
@@ -66,6 +79,11 @@ impl<'w, 's> ActionBarWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
                 });
 
                 row.container(ImageBundle::default(), |column| {
+                    let entity = column.id();
+                    column
+                        .commands()
+                        .entity(entity)
+                        .insert((Name::new("E_Ability_slot"), AbilitySlot));
                     column
                         .style()
                         .width(Val::Px(50.0))

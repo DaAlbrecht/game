@@ -48,7 +48,11 @@ fn main() {
 }
 
 fn debug_plugins(mut commands: Commands) {
-    commands.spawn((PerfUiRoot::default(), PerfUiEntryFPS::default()));
+    commands.spawn((
+        Name::new("perfui"),
+        PerfUiRoot::default(),
+        PerfUiEntryFPS::default(),
+    ));
 }
 
 #[allow(dead_code)]
