@@ -1,5 +1,6 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::{utils::translation_to_grid_coords, GridCoords};
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use crate::{
     camera::MainCamera, enemy::Enemy, input::move_player, AppState, CURSOR_Z_INDEX, GRID_SIZE,
@@ -20,7 +21,8 @@ impl Plugin for GameCursorPlugin {
                 (show_cursor, cursor_mode)
                     .after(update_game_cursor)
                     .run_if(in_state(AppState::InGame)),
-            );
+            )
+            .add_plugins(ResourceInspectorPlugin::<CursorPos>::default());
     }
 }
 
@@ -162,7 +164,7 @@ fn show_cursor(
     if cursor_moved_er.read().next().is_some() {
         *cursor_visivility = Visibility::Visible;
     } else {
-        *cursor_visivility = Visibility::Hidden;
+        //*cursor_visivility = Visibility::Hidden;
     }
 }
 
