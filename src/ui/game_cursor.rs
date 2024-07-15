@@ -1,6 +1,5 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::{utils::translation_to_grid_coords, GridCoords};
-use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use crate::{
     camera::MainCamera, enemy::Enemy, input::move_player, AppState, CURSOR_Z_INDEX, GRID_SIZE,
@@ -22,12 +21,14 @@ impl Plugin for GameCursorPlugin {
                     .after(update_game_cursor)
                     .run_if(in_state(AppState::InGame)),
             )
-            .add_plugins(ResourceInspectorPlugin::<CursorPos>::default());
+            .register_type::<GameCursor>();
     }
 }
 
-#[derive(Component)]
-pub struct GameCursor;
+#[derive(Component, Reflect)]
+pub struct GameCursor {
+    pub active_time: Timer,
+}
 
 #[derive(Resource, Reflect, Default)]
 pub struct CursorPos {
@@ -154,6 +155,8 @@ fn hide_grab(mut q_windows: Query<&mut Window, With<PrimaryWindow>>) {
 fn show_cursor(
     mut cursor_moved_er: EventReader<CursorMoved>,
     mut cursor_visivility: Query<&mut Visibility, With<GameCursor>>,
+    mut game_cursor: Query<&mut GameCursor>,
+    timer: Res<Time>,
 ) {
     let mut cursor_visivility = if let Ok(cursor_visivility) = cursor_visivility.get_single_mut() {
         cursor_visivility
@@ -161,10 +164,22 @@ fn show_cursor(
         return;
     };
 
-    if cursor_moved_er.read().next().is_some() {
-        *cursor_visivility = Visibility::Visible;
+    let mut game_cursor = if let Ok(game_cursor) = game_cursor.get_single_mut() {
+        game_cursor
     } else {
-        //*cursor_visivility = Visibility::Hidden;
+        return;
+    };
+
+    if cursor_moved_er.read().next().is_some() {
+        game_cursor.active_time.reset();
+    } else {
+        game_cursor.active_time.tick(timer.delta());
+    }
+
+    if game_cursor.active_time.finished() {
+        *cursor_visivility = Visibility::Hidden;
+    } else {
+        *cursor_visivility = Visibility::Visible;
     }
 }
 

@@ -14,8 +14,12 @@ pub mod player;
 pub mod ui;
 
 pub const GRID_SIZE: i32 = 16;
-pub const ACTION_DELAY: f32 = 0.2;
 
+// timers
+pub const ACTION_DELAY: f32 = 0.2;
+pub const ACTIVE_TIME: f32 = 0.5;
+
+// z-indices
 pub const CURSOR_Z_INDEX: f32 = 100.0;
 pub const ABILITY_Z_INDEX: f32 = 11.0;
 
@@ -98,7 +102,9 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             ..default()
         },
-        GameCursor,
+        GameCursor {
+            active_time: Timer::from_seconds(ACTIVE_TIME, TimerMode::Once),
+        },
         Name::new("Cursor"),
     ));
 }
