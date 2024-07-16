@@ -85,14 +85,14 @@ struct PlayerAnimationIndecies {
 #[derive(AssetCollection, Resource)]
 struct PlayerAnimation {
     #[asset(texture_atlas_layout(
-        tile_size_x = 16.,
-        tile_size_y = 16.,
+        tile_size_x = 16,
+        tile_size_y = 16,
         columns = 24,
         rows = 8,
-        padding_x = 16.,
-        padding_y = 16.,
-        offset_x = 8.,
-        offset_y = 8.
+        padding_x = 16,
+        padding_y = 16,
+        offset_x = 8,
+        offset_y = 8
     ))]
     layout: Handle<TextureAtlasLayout>,
     #[asset(path = "puny_characters/human_worker_red.png")]

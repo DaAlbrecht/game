@@ -3,14 +3,21 @@ use bevy_ecs_ldtk::GridCoords;
 use rand::Rng;
 pub mod slime;
 
-use crate::{events::CombatEvent, grid::GridPosition, ldtk::LevelWalls, player::Player, AppState};
+use crate::{
+    events::CombatEvent, get_single, grid::GridPosition, ldtk::LevelWalls, player::Player, AppState,
+};
 
 pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (player_enemy_range_detection, show_healthbar).run_if(in_state(AppState::InGame)),
+            (
+                player_enemy_range_detection,
+                show_healthbar,
+                handle_attacking_mark,
+            )
+                .run_if(in_state(AppState::InGame)),
         )
         .register_type::<EnemyBehaviorState>()
         .register_type::<Enemy>();
@@ -24,6 +31,18 @@ pub struct HealthBar;
 pub struct Enemy {
     pub behavior_state: EnemyBehaviorState,
 }
+
+#[derive(Component, Reflect)]
+pub struct AttackRange(i32);
+
+impl Default for AttackRange {
+    fn default() -> Self {
+        AttackRange(1)
+    }
+}
+
+#[derive(Component, Default, Reflect)]
+pub struct EnemyAttacking;
 
 #[derive(Default, Reflect, PartialEq)]
 pub enum EnemyBehaviorState {
@@ -60,6 +79,24 @@ fn player_enemy_range_detection(
     }
 
     combat_event.send(CombatEvent(is_in_combat));
+}
+
+fn handle_attacking_mark(
+    mut commands: Commands,
+    player_pos: Query<&GridCoords, With<Player>>,
+    enemies: Query<(Entity, &GridCoords, &AttackRange), With<Enemy>>,
+) {
+    let player_pos = get_single!(player_pos);
+    for (entity, enemy_pos, attack_range) in enemies.iter() {
+        let x_diff = (player_pos.x - enemy_pos.x).abs();
+        let y_diff = (player_pos.y - enemy_pos.y).abs();
+
+        if x_diff <= attack_range.0 && y_diff <= attack_range.0 {
+            commands.entity(entity).insert(EnemyAttacking);
+        } else {
+            commands.entity(entity).remove::<EnemyAttacking>();
+        }
+    }
 }
 
 fn show_healthbar(

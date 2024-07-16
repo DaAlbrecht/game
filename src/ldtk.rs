@@ -28,7 +28,7 @@ pub struct Wall;
 struct PlayerBundle {
     player: Player,
     #[sprite_sheet_bundle]
-    sprite_bundle: SpriteSheetBundle,
+    sprite_bundle: LdtkSpriteSheetBundle,
     #[grid_coords]
     grid_coords: GridCoords,
 }
@@ -37,7 +37,7 @@ struct PlayerBundle {
 struct StairsBundle {
     stair: Stair,
     #[sprite_sheet_bundle]
-    sprite_sheet_bundle: SpriteSheetBundle,
+    sprite_sheet_bundle: LdtkSpriteSheetBundle,
     #[grid_coords]
     grid_coords: GridCoords,
 }
@@ -46,7 +46,7 @@ struct StairsBundle {
 struct SlimeBundle {
     slime: Slime,
     #[sprite_sheet_bundle]
-    sprite_sheet_bundle: SpriteSheetBundle,
+    sprite_sheet_bundle: LdtkSpriteSheetBundle,
     #[grid_coords]
     grid_coords: GridCoords,
 }

@@ -1,4 +1,5 @@
 use bevy::{
+    color::palettes::css,
     prelude::*,
     sprite::{MaterialMesh2dBundle, Mesh2dHandle},
 };
@@ -13,7 +14,7 @@ use crate::{
     AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
-use super::{Enemy, EnemyBehaviorState, HealthBar};
+use super::{AttackRange, Enemy, EnemyBehaviorState, HealthBar};
 
 pub struct SlimePlugin;
 
@@ -58,14 +59,14 @@ struct SlimeAnimationIndecies {
 #[derive(AssetCollection, Resource)]
 struct SlimeAnimation {
     #[asset(texture_atlas_layout(
-        tile_size_x = 18.,
-        tile_size_y = 17.,
+        tile_size_x = 18,
+        tile_size_y = 17,
         columns = 15,
         rows = 1,
-        padding_x = 14.,
-        padding_y = 8.,
-        offset_x = 8.,
-        offset_y = 4.
+        padding_x = 14,
+        padding_y = 8,
+        offset_x = 8,
+        offset_y = 4
     ))]
     layout: Handle<TextureAtlasLayout>,
     #[asset(path = "puny_characters/slime.png")]
@@ -97,6 +98,7 @@ fn patch_slime(
             SlimeAnimationState::default(),
             Enemy::default(),
             Collider::default(),
+            AttackRange::default(),
         ));
 
         let healt_bar = commands
@@ -104,7 +106,7 @@ fn patch_slime(
                 HealthBar,
                 MaterialMesh2dBundle {
                     mesh: Mesh2dHandle(meshes.add(Rectangle::new(10.0, 1.0))),
-                    material: materials.add(Color::RED),
+                    material: materials.add(Color::from(css::RED)),
                     transform: Transform::from_xyz(0., 8., 0.),
                     visibility: Visibility::Hidden,
                     ..default()

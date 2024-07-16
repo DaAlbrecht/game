@@ -1,16 +1,8 @@
 use bevy::prelude::*;
 use sickle_ui::{
+    prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt, UiRoot},
     ui_commands::SetTextExt,
-    ui_style::{
-        SetBackgroundColorExt, SetImageExt, SetNodeBottomExt, SetNodeHeightExt, SetNodeMarginExt,
-        SetNodePositionTypeExt, SetNodeRightExt, SetNodeTopExt, SetNodeWidthExt,
-    },
-    widgets::{
-        container::UiContainerExt,
-        label::{LabelConfig, UiLabelExt},
-        row::UiRowExt,
-    },
 };
 
 use super::PlayerHud;
@@ -28,12 +20,12 @@ struct AbilitySlot;
 #[derive(Component)]
 struct ActionBarWidget;
 
-pub trait ActionBarWidgetExt<'w, 's> {
-    fn action_bar_widget<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity>;
+pub trait ActionBarWidgetExt {
+    fn action_bar_widget(&mut self) -> UiBuilder<Entity>;
 }
 
-impl<'w, 's> ActionBarWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
-    fn action_bar_widget<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
+impl ActionBarWidgetExt for UiBuilder<'_, UiRoot> {
+    fn action_bar_widget(&mut self) -> UiBuilder<Entity> {
         self.container(
             (ImageBundle::default(), (ActionBarWidget, PlayerHud)),
             |action_bar| {
@@ -65,7 +57,7 @@ impl<'w, 's> ActionBarWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
                         .width(Val::Px(50.0))
                         .height(Val::Px(50.0))
                         .margin(margin)
-                        .image("fireball_on_cd.png");
+                        .image(ImageSource::Path("fireball_on_cd.png".to_string()));
 
                     let mut label = column.label(LabelConfig::default());
 
@@ -89,7 +81,7 @@ impl<'w, 's> ActionBarWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
                         .width(Val::Px(50.0))
                         .height(Val::Px(50.0))
                         .margin(margin)
-                        .image("earth.png");
+                        .image(ImageSource::Path("earth.png".to_string()));
 
                     let mut label = column.label(LabelConfig::default());
 

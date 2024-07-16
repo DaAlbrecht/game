@@ -93,7 +93,7 @@ pub fn cursor_pos_in_world_pilot_mode(
 
     // Convert screen position [0..resolution] to ndc [-1..1]
     // (ndc = normalized device coordinates)
-    let ndc_to_world = cam_t.compute_matrix() * cam.projection_matrix().inverse();
+    let ndc_to_world = cam_t.compute_matrix() * cam.clip_from_view().inverse();
     let ndc = (cursor_pos / window_size) * 2.0 - Vec2::ONE;
     ndc_to_world.project_point3(ndc.extend(0.0))
 }
@@ -110,7 +110,7 @@ pub fn cursor_pos_in_world(
 
     // Convert screen position [0..resolution] to ndc [-1..1]
     // (ndc = normalized device coordinates)
-    let ndc_to_world = cam_t.compute_matrix() * cam.projection_matrix().inverse();
+    let ndc_to_world = cam_t.compute_matrix() * cam.clip_from_view().inverse();
     let ndc = (cursor_pos / window_size) * 2.0 - Vec2::ONE;
     ndc_to_world.project_point3(ndc.extend(0.0))
 }
@@ -127,7 +127,7 @@ pub fn cursor_pos_in_ui(
     // Convert screen position [0..resolution] to ndc [-1..1]
     // (ndc = normalized device coordinates)
     let t = Transform::from_translation(Vec3::new(0., 0., 0.));
-    let ndc_to_world = t.compute_matrix() * cam.projection_matrix().inverse();
+    let ndc_to_world = t.compute_matrix() * cam.clip_from_view().inverse();
     let ndc = (cursor_pos / window_size) * 2.0 - Vec2::ONE;
     ndc_to_world.project_point3(ndc.extend(0.0))
 }

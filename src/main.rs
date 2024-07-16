@@ -16,12 +16,12 @@ use game::{
     ui::UiPlugin,
     AppState,
 };
-use iyes_perf_ui::{diagnostics::PerfUiEntryFPS, PerfUiPlugin, PerfUiRoot};
+use iyes_perf_ui::{prelude::PerfUiEntryFPS, ui::root::PerfUiRoot, PerfUiPlugin};
 
 fn main() {
     let mut app = App::new();
-    app.init_state::<AppState>()
-        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+    app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .init_state::<AppState>()
         .add_plugins(LdtkPlugin)
         .add_plugins(LdtkAssetPlugin)
         .add_plugins(GridPlugin)
@@ -41,7 +41,7 @@ fn main() {
         app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
             .add_plugins(PerfUiPlugin)
             .add_plugins(WorldInspectorPlugin::default())
-            //.add_systems(Last, print_resources)
+            .add_systems(Last, print_resources)
             .add_systems(Startup, debug_plugins);
     }
     app.run();

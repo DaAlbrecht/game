@@ -1,11 +1,7 @@
-use bevy::prelude::*;
+use bevy::{color::palettes::css, prelude::*};
 use sickle_ui::{
+    prelude::*,
     ui_builder::{UiBuilder, UiBuilderExt, UiRoot},
-    ui_style::{
-        SetBackgroundColorExt, SetNodeHeightExt, SetNodeLeftExt, SetNodePositionTypeExt,
-        SetNodeTopExt, SetNodeWidthExt,
-    },
-    widgets::container::UiContainerExt,
 };
 
 use super::PlayerHud;
@@ -22,11 +18,11 @@ impl Plugin for PlayerWidgetPlugin {
 struct PlayerWidget;
 
 pub trait PlayerWidgetExt<'w, 's> {
-    fn player_widget<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity>;
+    fn player_widget<'a>(&'a mut self) -> UiBuilder<Entity>;
 }
 
-impl<'w, 's> PlayerWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
-    fn player_widget<'a>(&'a mut self) -> UiBuilder<'w, 's, 'a, Entity> {
+impl<'w, 's> PlayerWidgetExt<'w, 's> for UiBuilder<'_, UiRoot> {
+    fn player_widget<'a>(&'a mut self) -> UiBuilder<Entity> {
         self.container(
             (ImageBundle::default(), (PlayerWidget, PlayerHud)),
             |player_widget| {
@@ -35,12 +31,13 @@ impl<'w, 's> PlayerWidgetExt<'w, 's> for UiBuilder<'w, 's, '_, UiRoot> {
                     .commands()
                     .entity(entity)
                     .insert(Name::new("PlayerWidget"));
+
                 player_widget
                     .style()
                     .position_type(PositionType::Absolute)
                     .left(Val::Percent(10.0))
                     .top(Val::Percent(70.0))
-                    .background_color(Color::GREEN)
+                    .background_color(css::GREEN.into())
                     .width(Val::Percent(20.0))
                     .height(Val::Percent(20.0));
             },

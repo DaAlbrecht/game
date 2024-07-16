@@ -16,17 +16,18 @@ debug = false
 
 
 [dependencies]
-bevy = "0.13.2"
-bevy-inspector-egui = "0.23.4"
-bevy_asset_loader = { version = "0.20.1", features = ["2d"] }
-bevy_ecs_ldtk = { git = "https://github.com/Trouv/bevy_ecs_ldtk", branch = "main" }
-iyes_perf_ui = "0.2.3"
-leafwing-input-manager = "0.13.3"
+bevy = { version = "0.14.0", features = ["bevy_state"] }
+bevy-inspector-egui = "0.25.0"
+bevy_asset_loader = { version = "0.21.0", features = ["2d"] }
+#switch when https://github.com/Trouv/bevy_ecs_ldtk/pull/325 is merged
+bevy_ecs_ldtk = { git = "https://github.com/MScottMcBee/bevy_ecs_ldtk", branch = "0.14" }
+iyes_perf_ui = "0.3"
+leafwing-input-manager = "0.14"
 pathfinding = "4.10.0"
 rand = "0.8.5"
 
 sickle_ui = { git = "https://github.com/UmbraLuminosa/sickle_ui" }
 
 
-[patch.crates-io]
-bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap" }
+#[patch.crates-io]
+#bevy_ecs_tilemap = { git = "https://github.com/StarArawn/bevy_ecs_tilemap" }

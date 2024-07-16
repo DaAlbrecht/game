@@ -1,4 +1,5 @@
 use bevy::{
+    color::palettes::css,
     prelude::*,
     sprite::{MaterialMesh2dBundle, Mesh2dHandle},
 };
@@ -47,7 +48,7 @@ fn fireball(
         commands.spawn((
             MaterialMesh2dBundle {
                 mesh: Mesh2dHandle(meshes.add(Circle::new(2.0))),
-                material: materials.add(Color::RED),
+                material: materials.add(Color::from(css::RED)),
                 transform: fireball_transform,
                 ..default()
             },
