@@ -3,6 +3,7 @@ use bevy_ecs_ldtk::GridCoords;
 use leafwing_input_manager::prelude::*;
 
 use crate::{
+    get_single_or_panic,
     player::{Player, PlayerMove},
     AppState, GameCursor,
 };
@@ -102,11 +103,10 @@ impl PlayerInputBundle {
 }
 
 fn add_player_input_manager(mut commands: Commands, player: Query<Entity, With<Player>>) {
-    let player = if let Ok(player) = player.get_single() {
-        player
-    } else {
-        panic!("No player entity found");
-    };
+    let player = get_single_or_panic!(
+        player,
+        "Player should always exist at this stage or the game is broken"
+    );
 
     commands.entity(player).insert(PlayerInputBundle {
         input_manager: InputManagerBundle::with_map(PlayerInputBundle::default_input_map()),

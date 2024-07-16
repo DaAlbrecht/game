@@ -23,6 +23,60 @@ pub const ACTIVE_TIME: f32 = 0.5;
 pub const CURSOR_Z_INDEX: f32 = 100.0;
 pub const ABILITY_Z_INDEX: f32 = 11.0;
 
+// helper macros
+
+#[macro_export]
+macro_rules! get_single {
+    ($q:expr) => {
+        match $q.get_single() {
+            Ok(m) => m,
+            _ => return,
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! get_single_mut {
+    ($q:expr) => {
+        match $q.get_single_mut() {
+            Ok(m) => m,
+            _ => return,
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! get_single_or_panic {
+    ($q:expr) => {
+        match $q.get_single() {
+            Ok(m) => m,
+            _ => panic!("Expected a single entity, found none"),
+        }
+    };
+    ($q:expr, $msg:expr) => {
+        match $q.get_single() {
+            Ok(m) => m,
+            _ => panic!($msg),
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! get_single_mut_or_panic {
+    ($q:expr) => {
+        match $q.get_single_mut() {
+            Ok(m) => m,
+            _ => panic!("Expected a single entity, found none"),
+        }
+    };
+    ($q:expr, $msg:expr) => {
+        match $q.get_single_mut() {
+            Ok(m) => m,
+            _ => panic!($msg),
+        }
+    };
+}
+
 #[derive(Component, Reflect)]
 pub struct Health(i32);
 

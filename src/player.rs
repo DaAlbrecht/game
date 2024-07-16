@@ -3,8 +3,8 @@ use bevy_asset_loader::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 
 use crate::{
-    events::TurnOver, grid::Collider, ldtk::LevelWalls, ActionTimer, AnimationTimer, AppState,
-    Health, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
+    events::TurnOver, get_single_mut, grid::Collider, ldtk::LevelWalls, ActionTimer,
+    AnimationTimer, AppState, Health, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
 pub struct PlayerPlugin;
@@ -247,18 +247,9 @@ fn update_player_position(
     level_walls: Res<LevelWalls>,
     time: Res<Time>,
 ) {
-    let (mut player_pos, mut player_direction, mut player_action) =
-        if let Ok((player_pos, player_direction, player_action)) = players.get_single_mut() {
-            (player_pos, player_direction, player_action)
-        } else {
-            return;
-        };
+    let (mut player_pos, mut player_direction, mut player_action) = get_single_mut!(players);
 
-    let mut action_timer = if let Ok(action_timer) = action_timer.get_single_mut() {
-        action_timer
-    } else {
-        return;
-    };
+    let mut action_timer = get_single_mut!(action_timer);
 
     action_timer.tick(time.delta());
 

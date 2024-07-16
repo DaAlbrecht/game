@@ -5,6 +5,7 @@ use bevy::{
 use leafwing_input_manager::action_state::ActionState;
 
 use crate::{
+    get_single_mut,
     input::PlayerInputAction,
     player::{Player, PlayerAction},
     AppState, ABILITY_Z_INDEX,
@@ -35,12 +36,7 @@ fn fireball(
     mut player_action: Query<&mut PlayerAction, With<Player>>,
 ) {
     let action_state = query.single();
-    let mut player_action = if let Ok(player_action) = player_action.get_single_mut() {
-        player_action
-    } else {
-        info!("Failed to get player action");
-        return;
-    };
+    let mut player_action = get_single_mut!(player_action);
 
     if action_state.just_pressed(&PlayerInputAction::Ability1)
         && *player_action != PlayerAction::Combat
