@@ -14,7 +14,7 @@ use crate::{
     AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
-use super::{AttackRange, Enemy, EnemyBehaviorState, HealthBar};
+use super::{health_bar::HealthBarMaterial, AttackRange, Enemy, EnemyBehaviorState, HealthBar};
 
 pub struct SlimePlugin;
 
@@ -78,7 +78,7 @@ fn patch_slime(
     asset: Res<SlimeAnimation>,
     mut slime_query: Query<(Entity, &mut TextureAtlas, &mut Handle<Image>), With<Slime>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut health_bar_materials: ResMut<Assets<HealthBarMaterial>>,
 ) {
     for (entity, mut atlas, mut texture) in &mut slime_query {
         let slime_animation_indices = SlimeAnimationIndecies {
@@ -106,7 +106,11 @@ fn patch_slime(
                 HealthBar,
                 MaterialMesh2dBundle {
                     mesh: Mesh2dHandle(meshes.add(Rectangle::new(10.0, 1.0))),
-                    material: materials.add(Color::from(css::RED)),
+                    material: health_bar_materials.add(HealthBarMaterial {
+                        foreground_color: css::GREEN.into(),
+                        background_color: css::RED.into(),
+                        percent: 0.55,
+                    }),
                     transform: Transform::from_xyz(0., 8., 0.),
                     visibility: Visibility::Hidden,
                     ..default()

@@ -6,7 +6,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use game::{
     camera::CameraPlugin,
     combat::CombatPlugin,
-    enemy::{slime::SlimePlugin, EnemyPlugin},
+    enemy::{health_bar::HealthBarPlugin, slime::SlimePlugin, EnemyPlugin},
     events::EventsPlugin,
     grid::GridPlugin,
     input::InputPlugin,
@@ -35,13 +35,14 @@ fn main() {
         .add_plugins(CombatPlugin)
         .add_plugins(EventsPlugin)
         .add_plugins(UiPlugin)
+        .add_plugins(HealthBarPlugin)
         .add_systems(Startup, setup);
 
     if cfg!(debug_assertions) {
         app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
             .add_plugins(PerfUiPlugin)
             .add_plugins(WorldInspectorPlugin::default())
-            .add_systems(Last, print_resources)
+            //.add_systems(Last, print_resources)
             .add_systems(Startup, debug_plugins);
     }
     app.run();

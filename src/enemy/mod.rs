@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::GridCoords;
 use rand::Rng;
+
+pub mod health_bar;
 pub mod slime;
 
 use crate::{
@@ -114,6 +116,8 @@ fn show_healthbar(
         }
     }
 }
+
+//fn update_health_bar(mut commands: Commands, mut query: Query) {}
 
 impl Enemy {
     pub fn move_towards_player(
