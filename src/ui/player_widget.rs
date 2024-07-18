@@ -17,12 +17,12 @@ impl Plugin for PlayerWidgetPlugin {
 #[derive(Component)]
 struct PlayerWidget;
 
-pub trait PlayerWidgetExt<'w, 's> {
-    fn player_widget<'a>(&'a mut self) -> UiBuilder<Entity>;
+pub trait PlayerWidgetExt {
+    fn player_widget(&mut self) -> UiBuilder<Entity>;
 }
 
-impl<'w, 's> PlayerWidgetExt<'w, 's> for UiBuilder<'_, UiRoot> {
-    fn player_widget<'a>(&'a mut self) -> UiBuilder<Entity> {
+impl PlayerWidgetExt for UiBuilder<'_, UiRoot> {
+    fn player_widget(&mut self) -> UiBuilder<Entity> {
         self.container(
             (ImageBundle::default(), (PlayerWidget, PlayerHud)),
             |player_widget| {
