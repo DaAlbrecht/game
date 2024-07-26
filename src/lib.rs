@@ -78,11 +78,17 @@ macro_rules! get_single_mut_or_panic {
 }
 
 #[derive(Component, Reflect)]
-pub struct Health(i32);
+pub struct Health {
+    pub max_health: i32,
+    pub current_health: i32,
+}
 
 impl Default for Health {
     fn default() -> Self {
-        Self(100)
+        Self {
+            max_health: 100,
+            current_health: 100,
+        }
     }
 }
 

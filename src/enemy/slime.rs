@@ -11,7 +11,7 @@ use crate::{
     grid::Collider,
     ldtk::LevelWalls,
     player::{Player, PlayerAction},
-    AnimationTimer, AppState, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
+    AnimationTimer, AppState, Health, IdleAnimationTimer, IndeciesIter, ACTION_DELAY,
 };
 
 use super::{health_bar::HealthBarMaterial, AttackRange, Enemy, EnemyBehaviorState, HealthBar};
@@ -103,13 +103,14 @@ fn patch_slime(
 
         let healt_bar = commands
             .spawn((
+                Health::default(),
                 HealthBar,
                 MaterialMesh2dBundle {
                     mesh: Mesh2dHandle(meshes.add(Rectangle::new(10.0, 1.0))),
                     material: health_bar_materials.add(HealthBarMaterial {
                         foreground_color: css::GREEN.into(),
                         background_color: css::RED.into(),
-                        percent: 0.55,
+                        percent: 1.,
                     }),
                     transform: Transform::from_xyz(0., 8., 0.),
                     visibility: Visibility::Hidden,
