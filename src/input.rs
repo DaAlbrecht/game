@@ -63,6 +63,7 @@ impl MenuAction {
         let mut input_map = InputMap::default();
 
         input_map.insert(Pause, KeyCode::Escape);
+        input_map.insert(Pause, KeyCode::Semicolon);
 
         input_map
     }
@@ -139,7 +140,7 @@ fn toggle_menu(
     match state.get() {
         AppState::Loading => (),
         AppState::InGame => {
-            if action_state.just_pressed(&MenuAction::Pause) {
+            if action_state.pressed(&MenuAction::Pause) {
                 let mut primary_window = windows.single_mut();
                 primary_window.cursor.visible = !primary_window.cursor.visible;
 
@@ -149,7 +150,7 @@ fn toggle_menu(
             }
         }
         AppState::Menu => {
-            if action_state.just_pressed(&MenuAction::Pause) {
+            if action_state.pressed(&MenuAction::Pause) {
                 let mut primary_window = windows.single_mut();
                 primary_window.cursor.visible = !primary_window.cursor.visible;
 

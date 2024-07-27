@@ -4,7 +4,7 @@ use sickle_ui::{
     ui_builder::{UiBuilder, UiBuilderExt, UiRoot},
 };
 
-use super::PlayerHud;
+use crate::ui::PlayerHud;
 
 pub(crate) struct PlayerWidgetPlugin;
 

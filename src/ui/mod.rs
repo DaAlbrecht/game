@@ -1,10 +1,10 @@
-use self::{action_bar::ActionBarPlugin, player_widget::PlayerWidgetPlugin};
 use bevy::prelude::*;
 use game_cursor::GameCursorPlugin;
+use sickle_ui::SickleUiPlugin;
+use widgets::{action_bar::ActionBarPlugin, player_widget::PlayerWidgetPlugin};
 
-mod action_bar;
 pub mod game_cursor;
-mod player_widget;
+pub mod widgets;
 
 pub struct UiPlugin;
 
@@ -13,7 +13,8 @@ struct PlayerHud;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(ActionBarPlugin)
+        app.add_plugins(SickleUiPlugin)
+            .add_plugins(ActionBarPlugin)
             .add_plugins(PlayerWidgetPlugin)
             .add_plugins(GameCursorPlugin)
             .add_systems(Update, toggle_ui);
