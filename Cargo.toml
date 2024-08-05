@@ -16,7 +16,7 @@ debug = false
 
 
 [dependencies]
-bevy = { version = "0.14.0", features = ["bevy_state"] }
+bevy = { version = "0.14.1", features = ["bevy_state"] }
 bevy-inspector-egui = "0.25.0"
 bevy_asset_loader = { version = "0.21.0", features = ["2d"] }
 #switch when https://github.com/Trouv/bevy_ecs_ldtk/pull/325 is merged
