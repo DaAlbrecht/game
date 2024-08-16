@@ -1,8 +1,12 @@
+use std::process::Command;
+
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use pathfinding::prelude::astar;
 
 use crate::camera::MainCamera;
+use crate::enemy::Enemy;
+use crate::get_single;
 use crate::ldtk::{LevelWalls, Stair, Wall};
 use crate::{player::Player, AppState, GameplaySet, GRID_SIZE};
 
@@ -17,6 +21,7 @@ impl Plugin for GridPlugin {
                 cache_wall_locations,
                 check_stairs,
                 update_colliders,
+                spawn_grid,
             )
                 .in_set(GameplaySet::InputSet),
         )
@@ -222,5 +227,25 @@ fn check_stairs(
 pub fn update_colliders(mut query: Query<(&GridCoords, &mut Collider), With<Collider>>) {
     for (coords, mut collider) in query.iter_mut() {
         collider.position = *coords;
+    }
+}
+
+fn spawn_grid(
+    floor: Query<Entity, (Without<Wall>, Without<Player>, Without<Enemy>)>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    info!("For for ");
+    for entity in floor.iter() {
+        let grid_id = commands
+            .spawn(SpriteBundle {
+                texture: asset_server.load("GridYellow.png"),
+                ..default()
+            })
+            .id();
+
+        commands.entity(entity).add_child(grid_id);
+
+        info!("Hello");
     }
 }

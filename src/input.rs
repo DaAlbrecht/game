@@ -31,6 +31,7 @@ pub enum PlayerInputAction {
     Right,
     Ability1,
     Ability2,
+    Tab,
 }
 
 impl PlayerInputAction {
@@ -98,6 +99,8 @@ impl PlayerInputBundle {
 
         input_map.insert(Ability2, KeyCode::KeyE);
         input_map.insert(Ability2, GamepadButtonType::North);
+
+        input_map.insert(Tab, KeyCode::Tab);
 
         input_map
     }
