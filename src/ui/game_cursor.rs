@@ -58,23 +58,15 @@ pub fn update_cursor_pos(
         // any transforms on the camera. This is done by projecting the cursor position into
         // camera space (world space).
         for (cam_t, cam) in camera.iter() {
-            if cfg!(not(target_os = "macos")) {
-                *cursor = CursorPos {
-                    world_coords: cursor_pos_in_world(&windows, cursor_moved.position, cam_t, cam),
-                    ui_coords: cursor_pos_in_ui(&windows, cursor_moved.position, cam),
-                    screen_coords: cursor_moved.position.extend(0.),
-                };
-            } else {
-                *cursor = CursorPos {
-                    world_coords: cursor_pos_in_world_pilot_mode(
-                        &windows,
-                        cursor_moved.position,
-                        cam_t,
-                        cam,
-                    ),
-                    ui_coords: cursor_pos_in_ui(&windows, cursor_moved.position, cam),
-                    screen_coords: cursor_moved.position.extend(0.),
-                };
+            *cursor = CursorPos {
+                world_coords: cursor_pos_in_world_pilot_mode(
+                    &windows,
+                    cursor_moved.position,
+                    cam_t,
+                    cam,
+                ),
+                ui_coords: cursor_pos_in_ui(&windows, cursor_moved.position, cam),
+                screen_coords: cursor_moved.position.extend(0.),
             }
         }
     }
