@@ -7,7 +7,7 @@ use pathfinding::prelude::astar;
 use crate::camera::MainCamera;
 use crate::enemy::Enemy;
 use crate::get_single;
-use crate::ldtk::{LevelWalls, Stair, Wall};
+use crate::ldtk::{Floor, LevelWalls, Stair, Wall};
 use crate::{player::Player, AppState, GameplaySet, GRID_SIZE};
 
 pub struct GridPlugin;
@@ -231,21 +231,20 @@ pub fn update_colliders(mut query: Query<(&GridCoords, &mut Collider), With<Coll
 }
 
 fn spawn_grid(
-    floor: Query<Entity, (Without<Wall>, Without<Player>, Without<Enemy>)>,
+    floor: Query<Entity, With<Floor>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
 ) {
-    info!("For for ");
     for entity in floor.iter() {
         let grid_id = commands
             .spawn(SpriteBundle {
                 texture: asset_server.load("GridYellow.png"),
+                transform: Transform::from_xyz(-8.0, -8.0, 5.0),
                 ..default()
             })
             .id();
 
         commands.entity(entity).add_child(grid_id);
-
-        info!("Hello");
+        info!("Im the Floor");
     }
 }
