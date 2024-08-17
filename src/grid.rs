@@ -1,13 +1,17 @@
 use std::process::Command;
 
 use bevy::prelude::*;
+use bevy::render::view::visibility;
 use bevy_ecs_ldtk::prelude::*;
+use leafwing_input_manager::prelude::ActionState;
 use pathfinding::prelude::astar;
 
 use crate::camera::MainCamera;
 use crate::enemy::Enemy;
 use crate::get_single;
-use crate::ldtk::{Floor, LevelWalls, Stair, Wall};
+use crate::input::PlayerInputAction;
+use crate::ldtk::{Floor, LdtkAssetPlugin, LevelWalls, Stair, Wall};
+use crate::player::PlayerAction;
 use crate::{player::Player, AppState, GameplaySet, GRID_SIZE};
 
 pub struct GridPlugin;
@@ -21,11 +25,12 @@ impl Plugin for GridPlugin {
                 cache_wall_locations,
                 check_stairs,
                 update_colliders,
-                spawn_grid,
+                toggel_grid,
             )
                 .in_set(GameplaySet::InputSet),
         )
-        .register_type::<Collider>();
+        .register_type::<Collider>()
+        .add_systems(OnExit(AppState::Loading), spawn_grid);
     }
 }
 
@@ -240,11 +245,32 @@ fn spawn_grid(
             .spawn(SpriteBundle {
                 texture: asset_server.load("GridYellow.png"),
                 transform: Transform::from_xyz(-8.0, -8.0, 5.0),
+                visibility: Visibility::Inherited,
                 ..default()
             })
             .id();
 
         commands.entity(entity).add_child(grid_id);
         info!("Im the Floor");
+    }
+}
+
+fn toggel_grid(
+    mut floor: Query<&mut Visibility, With<Floor>>,
+    query: Query<&ActionState<PlayerInputAction>, With<Player>>,
+) {
+    if let Ok(action_state) = query.get_single() {
+        if action_state.just_pressed(&PlayerInputAction::Tab) {
+            for mut visibility in floor.iter_mut() {
+                *visibility = if *visibility == Visibility::Inherited {
+                    Visibility::Hidden
+                } else {
+                    Visibility::Inherited
+                };
+            }
+            info!("Toggled grid visibility");
+        }
+    } else {
+        warn!("No Player entity found in toggel_grid system");
     }
 }
