@@ -1,17 +1,11 @@
-use std::process::Command;
-
 use bevy::prelude::*;
-use bevy::render::view::visibility;
 use bevy_ecs_ldtk::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 use pathfinding::prelude::astar;
 
 use crate::camera::MainCamera;
-use crate::enemy::Enemy;
-use crate::get_single;
 use crate::input::PlayerInputAction;
-use crate::ldtk::{Floor, LdtkAssetPlugin, LevelWalls, Stair, Wall};
-use crate::player::PlayerAction;
+use crate::ldtk::{Floor, LevelWalls, Stair, Wall};
 use crate::{player::Player, AppState, GameplaySet, GRID_SIZE};
 
 pub struct GridPlugin;
