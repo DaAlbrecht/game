@@ -4,8 +4,10 @@ use leafwing_input_manager::prelude::ActionState;
 use pathfinding::prelude::astar;
 
 use crate::camera::MainCamera;
+use crate::events::GridToggledEvent;
 use crate::input::PlayerInputAction;
-use crate::ldtk::{Floor, LevelWalls, Stair, Wall};
+use crate::ldtk::{Floor, Grid, LevelWalls, Los_Grid, Stair, Wall};
+use crate::ui::game_cursor::CursorPos;
 use crate::{player::Player, AppState, GameplaySet, GRID_SIZE};
 
 pub struct GridPlugin;
@@ -20,11 +22,12 @@ impl Plugin for GridPlugin {
                 check_stairs,
                 update_colliders,
                 toggel_grid,
+                display_los_grid,
             )
                 .in_set(GameplaySet::InputSet),
         )
         .register_type::<Collider>()
-        .add_systems(OnExit(AppState::Loading), spawn_grid);
+        .add_systems(OnExit(AppState::Loading), (spawn_grid, spawn_los_grid));
     }
 }
 
@@ -239,9 +242,10 @@ fn spawn_grid(
             .spawn(SpriteBundle {
                 texture: asset_server.load("GridYellow.png"),
                 transform: Transform::from_xyz(-8.0, -8.0, 5.0),
-                visibility: Visibility::Inherited,
+                visibility: Visibility::Hidden,
                 ..default()
             })
+            .insert(Grid)
             .id();
 
         commands.entity(entity).add_child(grid_id);
@@ -250,21 +254,70 @@ fn spawn_grid(
 }
 
 fn toggel_grid(
-    mut floor: Query<&mut Visibility, With<Floor>>,
+    mut grid: Query<&mut Visibility, With<Grid>>,
     query: Query<&ActionState<PlayerInputAction>, With<Player>>,
+    mut event_writer: EventWriter<GridToggledEvent>,
 ) {
     if let Ok(action_state) = query.get_single() {
         if action_state.just_pressed(&PlayerInputAction::Tab) {
-            for mut visibility in floor.iter_mut() {
-                *visibility = if *visibility == Visibility::Inherited {
-                    Visibility::Hidden
+            let mut toggled_to_visible = false;
+            for mut visibility in grid.iter_mut() {
+                *visibility = if *visibility == Visibility::Hidden {
+                    toggled_to_visible = true;
+                    Visibility::Visible
                 } else {
-                    Visibility::Inherited
+                    toggled_to_visible = false;
+                    Visibility::Hidden
                 };
             }
+
+            if toggled_to_visible == true {
+                event_writer.send(GridToggledEvent(true));
+            } else {
+                event_writer.send(GridToggledEvent(false));
+            }
+
             info!("Toggled grid visibility");
         }
     } else {
         warn!("No Player entity found in toggel_grid system");
+    }
+}
+
+fn spawn_los_grid(
+    floor: Query<Entity, With<Floor>>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    for entity in floor.iter() {
+        let los_grid_id = commands
+            .spawn(SpriteBundle {
+                texture: asset_server.load("GridRed.png"),
+                transform: Transform::from_xyz(-8.0, -8.0, 6.0),
+                visibility: Visibility::Hidden,
+                ..default()
+            })
+            .insert(Los_Grid)
+            .id();
+
+        commands.entity(entity).add_child(los_grid_id);
+    }
+}
+
+fn display_los_grid(
+    mut grid: Query<&mut Visibility, With<Los_Grid>>,
+    mut toggel_reader: EventReader<GridToggledEvent>,
+    player_pos: Query<&Transform, With<Player>>,
+    cursor_pos: Res<CursorPos>,
+) {
+    let event_reader = toggel_reader.read().next();
+    if let Some(event) = event_reader {
+        for mut visibility in grid.iter_mut() {
+            *visibility = if event.0 {
+                Visibility::Visible
+            } else {
+                Visibility::Hidden
+            };
+        }
     }
 }

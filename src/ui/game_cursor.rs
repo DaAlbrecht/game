@@ -1,8 +1,11 @@
+use std::iter;
+
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::{utils::translation_to_grid_coords, GridCoords};
 
 use crate::{
-    camera::MainCamera, enemy::Enemy, input::move_player, AppState, CURSOR_Z_INDEX, GRID_SIZE,
+    camera::MainCamera, enemy::Enemy, get_single, get_single_mut, input::move_player,
+    player::Player, AppState, CURSOR_Z_INDEX, GRID_SIZE,
 };
 
 pub struct GameCursorPlugin;
@@ -21,6 +24,7 @@ impl Plugin for GameCursorPlugin {
                     .after(update_game_cursor)
                     .run_if(in_state(AppState::InGame)),
             )
+            .add_systems(Update, cursor_direction)
             .register_type::<GameCursor>();
     }
 }
@@ -44,6 +48,19 @@ impl CursorPos {
             IVec2::new(GRID_SIZE, GRID_SIZE),
         )
     }
+}
+
+#[derive(Component, Default, PartialEq, Debug, Reflect)]
+enum CursorDirection {
+    #[default]
+    Up,
+    Down,
+    Left,
+    Right,
+    UpRight,
+    UpLeft,
+    DownRight,
+    DownLeft,
 }
 
 //Special thanks to RaminKav from: https://github.com/RaminKav/BevySurvivalGame/tree/master
@@ -196,4 +213,34 @@ fn cursor_mode(
         }
     }
     *cursor_image = asset_server.load("Cursors_v2/Light/Arrows/Arrow1.png");
+}
+
+fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, With<Player>>) {
+    let player_pos = get_single!(player_grid);
+    let cursor_pos = cursor_pos.world_position();
+    let cursor_directio = CursorDirection::default();
+
+    let vec_diff = Vec3::new(
+        cursor_pos.x as f32 - player_pos.x as f32,
+        cursor_pos.y as f32 - player_pos.y as f32,
+        0.0,
+    );
+
+    match vec_diff {
+        Vec3 { x, y, z } if x >= 0.0 && x >= y * 2.0 => {
+            info!("Im somthing right")
+        }
+
+        Vec3 { x, y, z } if y >= 0.0 && x <= y * 0.5 => {
+            info!("im somthing up")
+        }
+
+        Vec3 { x, y, z } if x <= y * 2.0 && x >= y * 0.5 => {
+            info!("Im somthing up and right")
+        }
+
+        _ => {
+            return;
+        }
+    }
 }

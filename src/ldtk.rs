@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::bundle, prelude::*, render::view::visibility};
 use bevy_ecs_ldtk::prelude::*;
 
 use std::collections::HashSet;
@@ -28,6 +28,12 @@ pub struct Wall;
 
 #[derive(Default, Component)]
 pub struct Floor;
+
+#[derive(Default, Component)]
+pub struct Grid;
+
+#[derive(Default, Component)]
+pub struct Los_Grid;
 
 #[derive(Default, Bundle, LdtkEntity)]
 struct PlayerBundle {
