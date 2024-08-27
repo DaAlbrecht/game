@@ -1,6 +1,6 @@
 use std::iter;
 
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::{prelude::*, tasks::futures_lite::io::Cursor, window::PrimaryWindow};
 use bevy_ecs_ldtk::{utils::translation_to_grid_coords, GridCoords};
 
 use crate::{
@@ -25,7 +25,8 @@ impl Plugin for GameCursorPlugin {
                     .run_if(in_state(AppState::InGame)),
             )
             .add_systems(Update, cursor_direction)
-            .register_type::<GameCursor>();
+            .register_type::<GameCursor>()
+            .insert_resource(CursorDirection::default());
     }
 }
 
@@ -50,7 +51,7 @@ impl CursorPos {
     }
 }
 
-#[derive(Component, Default, PartialEq, Debug, Reflect)]
+#[derive(Component, Default, PartialEq, Debug, Reflect, Resource)]
 enum CursorDirection {
     #[default]
     Undefined,
@@ -216,10 +217,13 @@ fn cursor_mode(
     *cursor_image = asset_server.load("Cursors_v2/Light/Arrows/Arrow1.png");
 }
 
-fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, With<Player>>) {
+fn cursor_direction(
+    cursor_pos: Res<CursorPos>,
+    player_grid: Query<&GridCoords, With<Player>>,
+    mut cursor_direction: ResMut<CursorDirection>,
+) {
     let player_pos = get_single!(player_grid);
     let cursor_pos = cursor_pos.world_position();
-    let mut cursor_directio = CursorDirection::default();
 
     let vec_diff = Vec3::new(
         cursor_pos.x as f32 - player_pos.x as f32,
@@ -229,8 +233,8 @@ fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, 
 
     match vec_diff {
         Vec3 { x, y, z } if x >= y * 2.0 && x >= y * -2.0 => {
-            if cursor_directio != CursorDirection::Right {
-                cursor_directio = CursorDirection::Right;
+            if *cursor_direction != CursorDirection::Right {
+                *cursor_direction = CursorDirection::Right;
                 info!("Im right");
                 return;
             } else {
@@ -239,8 +243,8 @@ fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, 
         }
 
         Vec3 { x, y, z } if x < y * 2.0 && x > y * 0.5 => {
-            if cursor_directio != CursorDirection::UpRight {
-                cursor_directio = CursorDirection::UpRight;
+            if *cursor_direction != CursorDirection::UpRight {
+                *cursor_direction = CursorDirection::UpRight;
                 info!("Im up and right");
                 return;
             } else {
@@ -249,8 +253,8 @@ fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, 
         }
 
         Vec3 { x, y, z } if x <= y * 0.5 && x >= y * -0.5 => {
-            if cursor_directio != CursorDirection::Up {
-                cursor_directio = CursorDirection::Up;
+            if *cursor_direction != CursorDirection::Up {
+                *cursor_direction = CursorDirection::Up;
                 info!("Im up");
                 return;
             } else {
@@ -259,8 +263,8 @@ fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, 
         }
 
         Vec3 { x, y, z } if x < y * -0.5 && x > y * -2.0 => {
-            if cursor_directio != CursorDirection::UpLeft {
-                cursor_directio = CursorDirection::UpLeft;
+            if *cursor_direction != CursorDirection::UpLeft {
+                *cursor_direction = CursorDirection::UpLeft;
                 info!("Im up and left");
                 return;
             } else {
@@ -269,8 +273,8 @@ fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, 
         }
 
         Vec3 { x, y, z } if x <= y * -2.0 && x <= y * 2.0 => {
-            if cursor_directio != CursorDirection::Left {
-                cursor_directio = CursorDirection::Left;
+            if *cursor_direction != CursorDirection::Left {
+                *cursor_direction = CursorDirection::Left;
                 info!("Im left");
                 return;
             } else {
@@ -279,8 +283,8 @@ fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, 
         }
 
         Vec3 { x, y, z } if x > y * 2.0 && x < y * 0.5 => {
-            if cursor_directio != CursorDirection::DownLeft {
-                cursor_directio = CursorDirection::DownLeft;
+            if *cursor_direction != CursorDirection::DownLeft {
+                *cursor_direction = CursorDirection::DownLeft;
                 info!("Im down and left");
                 return;
             } else {
@@ -289,8 +293,8 @@ fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, 
         }
 
         Vec3 { x, y, z } if x >= y * 0.5 && x <= y * -0.5 => {
-            if cursor_directio != CursorDirection::Down {
-                cursor_directio = CursorDirection::Down;
+            if *cursor_direction != CursorDirection::Down {
+                *cursor_direction = CursorDirection::Down;
                 info!("Im down");
                 return;
             } else {
@@ -299,8 +303,8 @@ fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, 
         }
 
         Vec3 { x, y, z } if x > y * -0.5 && x < y * -2.0 => {
-            if cursor_directio != CursorDirection::DownRight {
-                cursor_directio = CursorDirection::DownRight;
+            if *cursor_direction != CursorDirection::DownRight {
+                *cursor_direction = CursorDirection::DownRight;
                 info!("Im down and right");
                 return;
             } else {
