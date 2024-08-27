@@ -53,6 +53,7 @@ impl CursorPos {
 #[derive(Component, Default, PartialEq, Debug, Reflect)]
 enum CursorDirection {
     #[default]
+    Undefined,
     Up,
     Down,
     Left,
@@ -218,7 +219,7 @@ fn cursor_mode(
 fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, With<Player>>) {
     let player_pos = get_single!(player_grid);
     let cursor_pos = cursor_pos.world_position();
-    let cursor_directio = CursorDirection::default();
+    let mut cursor_directio = CursorDirection::default();
 
     let vec_diff = Vec3::new(
         cursor_pos.x as f32 - player_pos.x as f32,
@@ -227,16 +228,84 @@ fn cursor_direction(cursor_pos: Res<CursorPos>, player_grid: Query<&GridCoords, 
     );
 
     match vec_diff {
-        Vec3 { x, y, z } if x >= 0.0 && x >= y * 2.0 => {
-            info!("Im somthing right")
+        Vec3 { x, y, z } if x >= y * 2.0 && x >= y * -2.0 => {
+            if cursor_directio != CursorDirection::Right {
+                cursor_directio = CursorDirection::Right;
+                info!("Im right");
+                return;
+            } else {
+                return;
+            }
         }
 
-        Vec3 { x, y, z } if y >= 0.0 && x <= y * 0.5 => {
-            info!("im somthing up")
+        Vec3 { x, y, z } if x < y * 2.0 && x > y * 0.5 => {
+            if cursor_directio != CursorDirection::UpRight {
+                cursor_directio = CursorDirection::UpRight;
+                info!("Im up and right");
+                return;
+            } else {
+                return;
+            }
         }
 
-        Vec3 { x, y, z } if x <= y * 2.0 && x >= y * 0.5 => {
-            info!("Im somthing up and right")
+        Vec3 { x, y, z } if x <= y * 0.5 && x >= y * -0.5 => {
+            if cursor_directio != CursorDirection::Up {
+                cursor_directio = CursorDirection::Up;
+                info!("Im up");
+                return;
+            } else {
+                return;
+            }
+        }
+
+        Vec3 { x, y, z } if x < y * -0.5 && x > y * -2.0 => {
+            if cursor_directio != CursorDirection::UpLeft {
+                cursor_directio = CursorDirection::UpLeft;
+                info!("Im up and left");
+                return;
+            } else {
+                return;
+            }
+        }
+
+        Vec3 { x, y, z } if x <= y * -2.0 && x <= y * 2.0 => {
+            if cursor_directio != CursorDirection::Left {
+                cursor_directio = CursorDirection::Left;
+                info!("Im left");
+                return;
+            } else {
+                return;
+            }
+        }
+
+        Vec3 { x, y, z } if x > y * 2.0 && x < y * 0.5 => {
+            if cursor_directio != CursorDirection::DownLeft {
+                cursor_directio = CursorDirection::DownLeft;
+                info!("Im down and left");
+                return;
+            } else {
+                return;
+            }
+        }
+
+        Vec3 { x, y, z } if x >= y * 0.5 && x <= y * -0.5 => {
+            if cursor_directio != CursorDirection::Down {
+                cursor_directio = CursorDirection::Down;
+                info!("Im down");
+                return;
+            } else {
+                return;
+            }
+        }
+
+        Vec3 { x, y, z } if x > y * -0.5 && x < y * -2.0 => {
+            if cursor_directio != CursorDirection::DownRight {
+                cursor_directio = CursorDirection::DownRight;
+                info!("Im down and right");
+                return;
+            } else {
+                return;
+            }
         }
 
         _ => {
