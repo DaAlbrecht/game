@@ -14,6 +14,7 @@ impl Plugin for GameCursorPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<CursorPos>()
             .add_systems(Startup, hide_grab)
+            .insert_resource(CursorDirection::default())
             .add_systems(
                 FixedUpdate,
                 (update_cursor_pos, update_game_cursor).after(move_player),
@@ -25,8 +26,7 @@ impl Plugin for GameCursorPlugin {
                     .run_if(in_state(AppState::InGame)),
             )
             .add_systems(Update, cursor_direction)
-            .register_type::<GameCursor>()
-            .insert_resource(CursorDirection::default());
+            .register_type::<GameCursor>();
     }
 }
 
@@ -52,7 +52,7 @@ impl CursorPos {
 }
 
 #[derive(Component, Default, PartialEq, Debug, Reflect, Resource)]
-enum CursorDirection {
+pub enum CursorDirection {
     #[default]
     Undefined,
     Up,
@@ -225,95 +225,20 @@ fn cursor_direction(
     let player_pos = get_single!(player_grid);
     let cursor_pos = cursor_pos.world_position();
 
-    let vec_diff = Vec3::new(
+    let vec_diff = Vec2::new(
         cursor_pos.x as f32 - player_pos.x as f32,
         cursor_pos.y as f32 - player_pos.y as f32,
-        0.0,
     );
 
-    match vec_diff {
-        Vec3 { x, y, z } if x >= y * 2.0 && x >= y * -2.0 => {
-            if *cursor_direction != CursorDirection::Right {
-                *cursor_direction = CursorDirection::Right;
-                info!("Im right");
-                return;
-            } else {
-                return;
-            }
-        }
-
-        Vec3 { x, y, z } if x < y * 2.0 && x > y * 0.5 => {
-            if *cursor_direction != CursorDirection::UpRight {
-                *cursor_direction = CursorDirection::UpRight;
-                info!("Im up and right");
-                return;
-            } else {
-                return;
-            }
-        }
-
-        Vec3 { x, y, z } if x <= y * 0.5 && x >= y * -0.5 => {
-            if *cursor_direction != CursorDirection::Up {
-                *cursor_direction = CursorDirection::Up;
-                info!("Im up");
-                return;
-            } else {
-                return;
-            }
-        }
-
-        Vec3 { x, y, z } if x < y * -0.5 && x > y * -2.0 => {
-            if *cursor_direction != CursorDirection::UpLeft {
-                *cursor_direction = CursorDirection::UpLeft;
-                info!("Im up and left");
-                return;
-            } else {
-                return;
-            }
-        }
-
-        Vec3 { x, y, z } if x <= y * -2.0 && x <= y * 2.0 => {
-            if *cursor_direction != CursorDirection::Left {
-                *cursor_direction = CursorDirection::Left;
-                info!("Im left");
-                return;
-            } else {
-                return;
-            }
-        }
-
-        Vec3 { x, y, z } if x > y * 2.0 && x < y * 0.5 => {
-            if *cursor_direction != CursorDirection::DownLeft {
-                *cursor_direction = CursorDirection::DownLeft;
-                info!("Im down and left");
-                return;
-            } else {
-                return;
-            }
-        }
-
-        Vec3 { x, y, z } if x >= y * 0.5 && x <= y * -0.5 => {
-            if *cursor_direction != CursorDirection::Down {
-                *cursor_direction = CursorDirection::Down;
-                info!("Im down");
-                return;
-            } else {
-                return;
-            }
-        }
-
-        Vec3 { x, y, z } if x > y * -0.5 && x < y * -2.0 => {
-            if *cursor_direction != CursorDirection::DownRight {
-                *cursor_direction = CursorDirection::DownRight;
-                info!("Im down and right");
-                return;
-            } else {
-                return;
-            }
-        }
-
-        _ => {
-            return;
-        }
-    }
+    *cursor_direction = match vec_diff {
+        Vec2 { x, y } if x >= y * 2.0 && x >= y * -2.0 => CursorDirection::Right,
+        Vec2 { x, y } if x < y * 2.0 && x > y * 0.5 => CursorDirection::UpRight,
+        Vec2 { x, y } if x <= y * 0.5 && x >= y * -0.5 => CursorDirection::Up,
+        Vec2 { x, y } if x < y * -0.5 && x > y * -2.0 => CursorDirection::UpLeft,
+        Vec2 { x, y } if x <= y * -2.0 && x <= y * 2.0 => CursorDirection::Left,
+        Vec2 { x, y } if x > y * 2.0 && x < y * 0.5 => CursorDirection::DownLeft,
+        Vec2 { x, y } if x >= y * 0.5 && x <= y * -0.5 => CursorDirection::Down,
+        Vec2 { x, y } if x > y * -0.5 && x < y * -2.0 => CursorDirection::DownRight,
+        _ => return, //no change
+    };
 }

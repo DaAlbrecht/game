@@ -1,13 +1,19 @@
+use bevy::ecs::entity;
+use bevy::ecs::observer::TriggerTargets;
 use bevy::prelude::*;
+use bevy::render::view::visibility;
+use bevy::utils::info;
 use bevy_ecs_ldtk::prelude::*;
+use bevy_inspector_egui::egui::epaint::text::cursor;
 use leafwing_input_manager::prelude::ActionState;
 use pathfinding::prelude::astar;
 
 use crate::camera::MainCamera;
-use crate::events::GridToggledEvent;
+
 use crate::input::PlayerInputAction;
 use crate::ldtk::{Floor, Grid, LevelWalls, Los_Grid, Stair, Wall};
-use crate::ui::game_cursor::CursorPos;
+use crate::ui::game_cursor::{CursorDirection, CursorPos};
+use crate::{get_single, player};
 use crate::{player::Player, AppState, GameplaySet, GRID_SIZE};
 
 pub struct GridPlugin;
@@ -27,7 +33,8 @@ impl Plugin for GridPlugin {
                 .in_set(GameplaySet::InputSet),
         )
         .register_type::<Collider>()
-        .add_systems(OnExit(AppState::Loading), (spawn_grid, spawn_los_grid));
+        .add_systems(OnExit(AppState::Loading), (spawn_grid, spawn_los_grid))
+        .insert_resource(GridToggled(false));
     }
 }
 
@@ -72,6 +79,9 @@ impl Default for Collider {
         }
     }
 }
+
+#[derive(Resource)]
+pub struct GridToggled(pub bool);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Successor {
@@ -249,14 +259,13 @@ fn spawn_grid(
             .id();
 
         commands.entity(entity).add_child(grid_id);
-        info!("Im the Floor");
     }
 }
 
 fn toggel_grid(
     mut grid: Query<&mut Visibility, With<Grid>>,
     query: Query<&ActionState<PlayerInputAction>, With<Player>>,
-    mut event_writer: EventWriter<GridToggledEvent>,
+    mut grid_toggled: ResMut<GridToggled>,
 ) {
     if let Ok(action_state) = query.get_single() {
         if action_state.just_pressed(&PlayerInputAction::Tab) {
@@ -272,9 +281,9 @@ fn toggel_grid(
             }
 
             if toggled_to_visible == true {
-                event_writer.send(GridToggledEvent(true));
+                grid_toggled.0 = true
             } else {
-                event_writer.send(GridToggledEvent(false));
+                grid_toggled.0 = false
             }
 
             info!("Toggled grid visibility");
@@ -305,19 +314,72 @@ fn spawn_los_grid(
 }
 
 fn display_los_grid(
-    mut grid: Query<&mut Visibility, With<Los_Grid>>,
-    mut toggel_reader: EventReader<GridToggledEvent>,
-    player_pos: Query<&Transform, With<Player>>,
-    cursor_pos: Res<CursorPos>,
+    floor: Query<(Entity, &GridCoords, Option<&Children>), With<Floor>>,
+    player_grid: Query<&GridCoords, With<Player>>,
+    cursor_direction: Res<CursorDirection>,
+    mut visibility_query: Query<&mut Visibility, With<Los_Grid>>,
+    grid_toggled: Res<GridToggled>,
 ) {
-    let event_reader = toggel_reader.read().next();
-    if let Some(event) = event_reader {
-        for mut visibility in grid.iter_mut() {
-            *visibility = if event.0 {
-                Visibility::Visible
-            } else {
-                Visibility::Hidden
-            };
+    if !grid_toggled.0 {
+        for mut visibility in visibility_query.iter_mut() {
+            *visibility = Visibility::Hidden;
+        }
+        return;
+    }
+    let player_pos = get_single!(player_grid);
+
+    for (entity, coords, children) in floor.iter() {
+        // Determine the direction and the range of the grid cells to be made visible
+        let should_toggle = match *cursor_direction {
+            CursorDirection::Up => coords.x == player_pos.x && coords.y >= player_pos.y,
+            CursorDirection::Down => coords.x == player_pos.x && coords.y <= player_pos.y,
+            CursorDirection::Left => coords.y == player_pos.y && coords.x <= player_pos.x,
+            CursorDirection::Right => coords.y == player_pos.y && coords.x >= player_pos.x,
+            CursorDirection::UpRight => {
+                (coords.x >= player_pos.x)
+                    && (coords.y >= player_pos.y)
+                    && (coords.y - player_pos.y == coords.x - player_pos.x)
+            }
+            CursorDirection::UpLeft => {
+                (coords.x <= player_pos.x)
+                    && (coords.y >= player_pos.y)
+                    && (coords.y - player_pos.y == player_pos.x - coords.x)
+            }
+            CursorDirection::DownRight => {
+                (coords.x >= player_pos.x)
+                    && (coords.y <= player_pos.y)
+                    && (player_pos.y - coords.y == coords.x - player_pos.x)
+            }
+            CursorDirection::DownLeft => {
+                (coords.x <= player_pos.x)
+                    && (coords.y <= player_pos.y)
+                    && (player_pos.y - coords.y == player_pos.x - coords.x)
+            }
+            _ => continue,
+        };
+
+        if should_toggle {
+            if let Some(children) = children {
+                for &child in children.iter() {
+                    if let Ok(mut visibility) = visibility_query.get_mut(child) {
+                        // Toggle visibility only if it is currently hidden
+                        if *visibility == Visibility::Hidden {
+                            *visibility = Visibility::Visible;
+                        }
+                    }
+                }
+            }
+        } else {
+            if let Some(children) = children {
+                for &child in children.iter() {
+                    if let Ok(mut visibility) = visibility_query.get_mut(child) {
+                        // Hide the grid cells that are outside the desired range
+                        if *visibility == Visibility::Visible {
+                            *visibility = Visibility::Hidden;
+                        }
+                    }
+                }
+            }
         }
     }
 }

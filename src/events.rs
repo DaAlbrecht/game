@@ -1,14 +1,12 @@
 use bevy::prelude::*;
 
-use crate::player::PlayerAction;
+use crate::{player::PlayerAction, ui::game_cursor::CursorDirection};
 
 pub struct EventsPlugin;
 
 impl Plugin for EventsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<CombatEvent>()
-            .add_event::<TurnOver>()
-            .add_event::<GridToggledEvent>();
+        app.add_event::<CombatEvent>().add_event::<TurnOver>();
     }
 }
 
@@ -17,6 +15,3 @@ pub struct TurnOver(pub PlayerAction);
 
 #[derive(Event)]
 pub struct CombatEvent(pub bool);
-
-#[derive(Event)]
-pub struct GridToggledEvent(pub bool);
