@@ -1,19 +1,14 @@
-use bevy::ecs::entity;
-use bevy::ecs::observer::TriggerTargets;
 use bevy::prelude::*;
-use bevy::render::view::visibility;
-use bevy::utils::info;
 use bevy_ecs_ldtk::prelude::*;
-use bevy_inspector_egui::egui::epaint::text::cursor;
 use leafwing_input_manager::prelude::ActionState;
 use pathfinding::prelude::astar;
 
 use crate::camera::MainCamera;
 
+use crate::get_single;
 use crate::input::PlayerInputAction;
 use crate::ldtk::{Floor, Grid, LevelWalls, Los_Grid, Stair, Wall};
-use crate::ui::game_cursor::{CursorDirection, CursorPos};
-use crate::{get_single, player};
+use crate::ui::game_cursor::CursorDirection;
 use crate::{player::Player, AppState, GameplaySet, GRID_SIZE};
 
 pub struct GridPlugin;
@@ -27,11 +22,11 @@ impl Plugin for GridPlugin {
                 cache_wall_locations,
                 check_stairs,
                 update_colliders,
-                toggel_grid,
                 display_los_grid,
             )
                 .in_set(GameplaySet::InputSet),
         )
+        .add_systems(Update, (toggel_grid).run_if(in_state(AppState::InGame)))
         .register_type::<Collider>()
         .add_systems(OnExit(AppState::Loading), (spawn_grid, spawn_los_grid))
         .insert_resource(GridToggled(false));
