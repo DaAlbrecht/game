@@ -21,7 +21,7 @@ pub const ACTIVE_TIME: f32 = 0.5;
 
 // z-indices
 pub const CURSOR_Z_INDEX: f32 = 100.0;
-pub const ABILITY_Z_INDEX: f32 = 11.0;
+pub const ABILITY_Z_INDEX: f32 = 20.0;
 
 // helper macros
 
