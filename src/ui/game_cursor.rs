@@ -1,10 +1,8 @@
-use std::iter;
-
-use bevy::{prelude::*, tasks::futures_lite::io::Cursor, window::PrimaryWindow};
+use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::{utils::translation_to_grid_coords, GridCoords};
 
 use crate::{
-    camera::MainCamera, enemy::Enemy, get_single, get_single_mut, input::move_player,
+    camera::MainCamera, enemy::Enemy, get_single, input::move_player,
     player::Player, AppState, CURSOR_Z_INDEX, GRID_SIZE,
 };
 

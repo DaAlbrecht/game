@@ -7,7 +7,7 @@ use crate::camera::MainCamera;
 
 use crate::get_single;
 use crate::input::PlayerInputAction;
-use crate::ldtk::{Floor, Grid, LevelWalls, Los_Grid, Stair, Wall};
+use crate::ldtk::{Floor, Grid, LevelWalls, LosGrid, Stair, Wall};
 use crate::ui::game_cursor::CursorDirection;
 use crate::{player::Player, AppState, GameplaySet, GRID_SIZE};
 
@@ -277,11 +277,8 @@ fn toggel_grid(
                 };
             }
 
-            if toggled_to_visible == true {
-                grid_toggled.0 = true
-            } else {
-                grid_toggled.0 = false
-            }
+            grid_toggled.0 = toggled_to_visible;
+
 
             info!("Toggled grid visibility");
         }
@@ -297,15 +294,13 @@ fn spawn_los_grid(
 ) {
     for entity in floor.iter() {
         let los_grid_id = commands
-            .spawn((
-                SpriteBundle {
-                    texture: asset_server.load("GridRed.png"),
-                    transform: Transform::from_xyz(-8.0, -8.0, 6.0),
-                    visibility: Visibility::Hidden,
-                    ..default()
-                },
-                Los_Grid,
-            ))
+            .spawn(SpriteBundle {
+                texture: asset_server.load("GridRed.png"),
+                transform: Transform::from_xyz(-8.0, -8.0, 6.0),
+                visibility: Visibility::Hidden,
+                ..default()
+            })
+            .insert(LosGrid)
             .id();
 
         commands.entity(entity).add_child(los_grid_id);
@@ -313,14 +308,14 @@ fn spawn_los_grid(
 }
 
 fn display_los_grid(
-    floor: Query<(Entity, &GridCoords, Option<&Children>), With<Floor>>,
+    floor: Query<(&GridCoords, Option<&Children>), With<Floor>>,
     player_grid: Query<&GridCoords, With<Player>>,
     cursor_direction: Res<CursorDirection>,
-    mut visibility_param_set: ParamSet<(
-        Query<&mut Visibility, With<Los_Grid>>, // ParamSet 0: Query for red grid
+    grid_toggled: Res<GridToggled>,
+       mut visibility_param_set: ParamSet<(
+        Query<&mut Visibility, With<LosGrid>>, // ParamSet 0: Query for red grid
         Query<&mut Visibility, With<Grid>>,     // ParamSet 1: Query for yellow grid
     )>,
-    grid_toggled: Res<GridToggled>,
 ) {
     // If the grid is not toggled, hide all los grids
     if !grid_toggled.0 {
@@ -333,8 +328,8 @@ fn display_los_grid(
         return;
     }
     let player_pos = get_single!(player_grid);
-    // iterate over each floor tile
-    for (entity, coords, children) in floor.iter() {
+
+    for (coords, children) in floor.iter() {
         // Determine the direction and the range of the grid cells to be made visible
         let should_toggle = match *cursor_direction {
             CursorDirection::Up => coords.x == player_pos.x && coords.y >= player_pos.y,
@@ -395,28 +390,3 @@ fn display_los_grid(
         }
     }
 }
-/*
-if should_toggle {
-    if let Some(children) = children {
-        for &child in children.iter() {
-            if let Ok(mut visibility) = visibility_query.get_mut(child) {
-                // Toggle visibility only if it is currently hidden
-                if *visibility == Visibility::Hidden {
-                    *visibility = Visibility::Visible;
-                }
-            }
-        }
-    }
-} else {
-    if let Some(children) = children {
-        for &child in children.iter() {
-            if let Ok(mut visibility) = visibility_query.get_mut(child) {
-                // Hide the grid cells that are outside the desired range
-                if *visibility == Visibility::Visible {
-                    *visibility = Visibility::Hidden;
-                }
-            }
-        }
-    }
-}
- */

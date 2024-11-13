@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{player::PlayerAction, ui::game_cursor::CursorDirection};
+use crate::player::PlayerAction;
 
 pub struct EventsPlugin;
 
