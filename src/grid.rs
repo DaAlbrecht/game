@@ -249,13 +249,15 @@ fn spawn_grid(
 ) {
     for entity in floor.iter() {
         let grid_id = commands
-            .spawn(SpriteBundle {
-                texture: asset_server.load("GridYellow.png"),
-                transform: Transform::from_xyz(-8.0, -8.0, 5.0),
-                visibility: Visibility::Hidden,
-                ..default()
-            })
-            .insert(Grid)
+            .spawn((
+                SpriteBundle {
+                    texture: asset_server.load("GridYellow.png"),
+                    transform: Transform::from_xyz(-8.0, -8.0, 5.0),
+                    visibility: Visibility::Hidden,
+                    ..default()
+                },
+                Grid, //Component to identify the yellow grid
+            ))
             .id();
 
         commands.entity(entity).add_child(grid_id);
@@ -300,13 +302,15 @@ fn spawn_los_grid(
 ) {
     for entity in floor.iter() {
         let los_grid_id = commands
-            .spawn(SpriteBundle {
-                texture: asset_server.load("GridRed.png"),
-                transform: Transform::from_xyz(-8.0, -8.0, 6.0),
-                visibility: Visibility::Hidden,
-                ..default()
-            })
-            .insert(Los_Grid)
+            .spawn((
+                SpriteBundle {
+                    texture: asset_server.load("GridRed.png"),
+                    transform: Transform::from_xyz(-8.0, -8.0, 6.0),
+                    visibility: Visibility::Hidden,
+                    ..default()
+                },
+                Los_Grid,
+            ))
             .id();
 
         commands.entity(entity).add_child(los_grid_id);
@@ -317,17 +321,24 @@ fn display_los_grid(
     floor: Query<(Entity, &GridCoords, Option<&Children>), With<Floor>>,
     player_grid: Query<&GridCoords, With<Player>>,
     cursor_direction: Res<CursorDirection>,
-    mut visibility_query: Query<&mut Visibility, With<Los_Grid>>,
+    mut visibility_param_set: ParamSet<(
+        Query<&mut Visibility, With<Los_Grid>>, // ParamSet 0: Query for red grid
+        Query<&mut Visibility, With<Grid>>,     // ParamSet 1: Query for yellow grid
+    )>,
     grid_toggled: Res<GridToggled>,
 ) {
+    // If the grid is not toggled, hide all los grids
     if !grid_toggled.0 {
-        for mut visibility in visibility_query.iter_mut() {
+        for mut visibility in visibility_param_set.p0().iter_mut() {
+            *visibility = Visibility::Hidden;
+        }
+        for mut visibility in visibility_param_set.p1().iter_mut() {
             *visibility = Visibility::Hidden;
         }
         return;
     }
     let player_pos = get_single!(player_grid);
-
+    // iterate over each floor tile
     for (entity, coords, children) in floor.iter() {
         // Determine the direction and the range of the grid cells to be made visible
         let should_toggle = match *cursor_direction {
@@ -355,27 +366,33 @@ fn display_los_grid(
                     && (coords.y <= player_pos.y)
                     && (player_pos.y - coords.y == player_pos.x - coords.x)
             }
-            _ => continue,
+            _ => false,
         };
+        if let Some(children) = children {
+            for &child in children.iter() {
+                // Check if the child is a red grid (Los_Grid)
+                if let Ok(mut los_visibility) = visibility_param_set.p0().get_mut(child) {
+                    if should_toggle {
+                        *los_visibility = Visibility::Visible;
 
-        if should_toggle {
-            if let Some(children) = children {
-                for &child in children.iter() {
-                    if let Ok(mut visibility) = visibility_query.get_mut(child) {
-                        // Toggle visibility only if it is currently hidden
-                        if *visibility == Visibility::Hidden {
-                            *visibility = Visibility::Visible;
+                        // Now, find the corresponding yellow grid among the children
+                        for &sibling in children.iter() {
+                            if let Ok(mut yellow_visibility) =
+                                visibility_param_set.p1().get_mut(sibling)
+                            {
+                                *yellow_visibility = Visibility::Hidden;
+                            }
                         }
-                    }
-                }
-            }
-        } else {
-            if let Some(children) = children {
-                for &child in children.iter() {
-                    if let Ok(mut visibility) = visibility_query.get_mut(child) {
-                        // Hide the grid cells that are outside the desired range
-                        if *visibility == Visibility::Visible {
-                            *visibility = Visibility::Hidden;
+                    } else {
+                        *los_visibility = Visibility::Hidden;
+
+                        // Restore the visibility of the yellow grid
+                        for &sibling in children.iter() {
+                            if let Ok(mut yellow_visibility) =
+                                visibility_param_set.p1().get_mut(sibling)
+                            {
+                                *yellow_visibility = Visibility::Visible;
+                            }
                         }
                     }
                 }
@@ -383,3 +400,28 @@ fn display_los_grid(
         }
     }
 }
+/*
+if should_toggle {
+    if let Some(children) = children {
+        for &child in children.iter() {
+            if let Ok(mut visibility) = visibility_query.get_mut(child) {
+                // Toggle visibility only if it is currently hidden
+                if *visibility == Visibility::Hidden {
+                    *visibility = Visibility::Visible;
+                }
+            }
+        }
+    }
+} else {
+    if let Some(children) = children {
+        for &child in children.iter() {
+            if let Ok(mut visibility) = visibility_query.get_mut(child) {
+                // Hide the grid cells that are outside the desired range
+                if *visibility == Visibility::Visible {
+                    *visibility = Visibility::Hidden;
+                }
+            }
+        }
+    }
+}
+ */
