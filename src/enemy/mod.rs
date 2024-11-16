@@ -21,6 +21,7 @@ impl Plugin for EnemyPlugin {
                 show_healthbar,
                 handle_attacking_mark,
                 update_health_bar,
+                despawn_dead_enemies,
             )
                 .run_if(in_state(AppState::InGame)),
         )
@@ -172,11 +173,23 @@ fn show_healthbar(
 
 fn update_health_bar(
     mut health_bar_materials: ResMut<Assets<HealthBarMaterial>>,
-    query: Query<(&Handle<HealthBarMaterial>, &Health)>,
+    enemies_q: Query<(&Health, &Children), With<Enemy>>,
+    healthbar_material_q: Query<&Handle<HealthBarMaterial>>,
 ) {
-    for (handle, health) in query.iter() {
-        let per = health.current_health as f32 / health.max_health as f32;
-        let material = health_bar_materials.get_mut(handle).unwrap();
-        material.percent = per;
+    for (health, children) in enemies_q.iter() {
+        for &child in children.iter() {
+            let per = health.current_health as f32 / health.max_health as f32;
+            let handle = healthbar_material_q.get(child).unwrap();
+            let material = health_bar_materials.get_mut(handle).unwrap();
+            material.percent = per;
+        }
+    }
+}
+
+fn despawn_dead_enemies(mut commands: Commands, enemies_q: Query<(Entity, &Health), With<Enemy>>) {
+    for (entity, health) in enemies_q.iter() {
+        if health.current_health <= 0 {
+            commands.entity(entity).despawn();
+        }
     }
 }

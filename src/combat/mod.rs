@@ -8,7 +8,7 @@ use leafwing_input_manager::action_state::ActionState;
 
 use crate::{
     enemy::Enemy,
-    get_single_mut,
+    get_single, get_single_mut,
     input::PlayerInputAction,
     player::{Player, PlayerAction},
     ui::game_cursor::{AttackCursor, CursorPos},
@@ -28,32 +28,35 @@ impl Plugin for CombatPlugin {
 }
 
 #[derive(Component)]
-struct Ability;
-
-#[derive(Component)]
-struct Fireball {
-    pub speed: f32,
+struct Ability {
+    target: Entity,
+    origin: Entity,
 }
 
 #[derive(Component)]
-struct Target {
-    pub origin_entity: Entity,
+struct Fireball {
+    speed: f32,
+    damage: i32,
 }
 
 #[derive(Event)]
 struct HitEvent {
     target: Entity,
     origin: Entity,
+    ability: Entity,
+    damage: i32,
 }
+
+const FIREBALL_DAMAGE: i32 = 50;
 
 //TODO: isntead of checking for enemies, we rather should use a 'target' component.
 fn fireball(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    query: Query<&ActionState<PlayerInputAction>, With<Player>>,
-    player_pos: Query<&Transform, With<Player>>,
     mut player_action: Query<&mut PlayerAction, With<Player>>,
+    input_q: Query<&ActionState<PlayerInputAction>, With<Player>>,
+    player_q: Query<(Entity, &Transform), With<Player>>,
     enemies_q: Query<(Entity, &GridCoords), With<Enemy>>,
     attack_cursor_q: Query<&AttackCursor>,
     cursor_pos: Res<CursorPos>,
@@ -64,7 +67,7 @@ fn fireball(
         return;
     }
 
-    let action_state = query.single();
+    let action_state = input_q.single();
     let mut player_action = get_single_mut!(player_action);
 
     let enemy_entity = enemies_q.iter().find_map(|(entity, coords)| {
@@ -75,19 +78,31 @@ fn fireball(
         }
     });
 
+    let enemy_entity = match enemy_entity {
+        Some(entity) => entity,
+        None => return,
+    };
+
     if action_state.just_pressed(&PlayerInputAction::Ability1)
         && *player_action != PlayerAction::Combat
     {
         *player_action = PlayerAction::Combat;
-        let mut fireball_transform = *player_pos.single();
+        let (player_entity, fireball_transform) = get_single!(player_q);
+        let mut fireball_transform = fireball_transform.clone();
         fireball_transform.translation.z = ABILITY_Z_INDEX;
         let fireball_entity = commands
-            .spawn((Ability, Fireball { speed: 1.0 }, Name::new("Fireball")))
+            .spawn((
+                Ability {
+                    origin: player_entity,
+                    target: enemy_entity,
+                },
+                Fireball {
+                    speed: 1.0,
+                    damage: FIREBALL_DAMAGE,
+                },
+                Name::new("Fireball"),
+            ))
             .id();
-
-        commands.entity(enemy_entity.unwrap()).insert(Target {
-            origin_entity: fireball_entity,
-        });
 
         commands
             .entity(fireball_entity)
@@ -101,42 +116,42 @@ fn fireball(
 }
 
 fn move_fireball(
-    mut fireball_q: Query<(&mut Transform, &Fireball, Entity), With<Fireball>>,
-    target_q: Query<(&Transform, &Target), (With<Enemy>, Without<Fireball>)>,
+    mut fireball_q: Query<(Entity, &mut Transform, &Fireball, &Ability), With<Ability>>,
+    enemies_q: Query<&Transform, (With<Enemy>, Without<Ability>)>,
     mut commands: Commands,
     mut player_action: Query<&mut PlayerAction, With<Player>>,
 ) {
     let mut player_action = get_single_mut!(player_action);
-    for (mut transform, fire_ball, fireball_entity) in fireball_q.iter_mut() {
-        for (target_transform, target) in target_q.iter() {
-            if target.origin_entity == fireball_entity {
-                let direction = target_transform.translation - transform.translation;
-                let distance = direction.length();
-                let direction = direction.normalize();
-                let movement = direction * fire_ball.speed;
+    for (ability_entity, mut transform, fire_ball, ability) in fireball_q.iter_mut() {
+        let target = enemies_q.get(ability.target).unwrap();
 
-                if distance < 1.0 {
-                    commands.trigger(HitEvent {
-                        target: target.origin_entity,
-                        origin: fireball_entity,
-                    });
-                    *player_action = PlayerAction::Idle;
-                } else {
-                    transform.translation += movement;
-                }
-            }
+        let direction = target.translation - transform.translation;
+        let distance = direction.length();
+        let direction = direction.normalize();
+        let movement = direction * fire_ball.speed;
+
+        if distance < 1.0 {
+            commands.trigger(HitEvent {
+                target: ability.target,
+                origin: ability.origin,
+                ability: ability_entity,
+                damage: fire_ball.damage,
+            });
+            *player_action = PlayerAction::Idle;
+        } else {
+            transform.translation += movement;
         }
     }
 }
 
 fn on_target_hit(
     trigger: Trigger<HitEvent>,
-    mut enemies_q: Query<&mut Health, With<Enemy>>,
+    mut health_q: Query<&mut Health>,
     mut commands: Commands,
 ) {
     let hit_event = trigger.event();
-    let mut target_health = enemies_q.get_mut(hit_event.target).unwrap();
-    // target_health.current_health -= 20;
-
-    commands.entity(hit_event.target).despawn();
+    commands.entity(hit_event.ability).despawn();
+    if let Ok(mut target_health) = health_q.get_mut(hit_event.target) {
+        target_health.current_health -= hit_event.damage;
+    }
 }
