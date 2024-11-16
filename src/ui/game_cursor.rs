@@ -1,11 +1,9 @@
-use std::iter;
-
-use bevy::{prelude::*, tasks::futures_lite::io::Cursor, window::PrimaryWindow};
+use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_ecs_ldtk::{utils::translation_to_grid_coords, GridCoords};
 
 use crate::{
-    camera::MainCamera, enemy::Enemy, get_single, get_single_mut, input::move_player,
-    player::Player, AppState, CURSOR_Z_INDEX, GRID_SIZE,
+    camera::MainCamera, enemy::Enemy, get_single, input::move_player, player::Player, AppState,
+    CURSOR_Z_INDEX, GRID_SIZE,
 };
 
 pub struct GameCursorPlugin;
@@ -34,6 +32,8 @@ impl Plugin for GameCursorPlugin {
 pub struct GameCursor {
     pub active_time: Timer,
 }
+#[derive(Component, Reflect)]
+pub struct AttackCursor;
 
 #[derive(Resource, Reflect, Default)]
 pub struct CursorPos {
@@ -196,13 +196,14 @@ fn show_cursor(
 
 fn cursor_mode(
     cursor_pos: Res<CursorPos>,
-    mut cursor_image: Query<&mut Handle<Image>, With<GameCursor>>,
+    mut cursor: Query<(Entity, &mut Handle<Image>), With<GameCursor>>,
     enemies_pos: Query<&GridCoords, With<Enemy>>,
     asset_server: Res<AssetServer>,
+    mut commands: Commands,
 ) {
     let cursor_pos = cursor_pos.world_position();
-    let mut cursor_image = if let Ok(cursor_image) = cursor_image.get_single_mut() {
-        cursor_image
+    let (entity, mut cursor_image) = if let Ok(cursor) = cursor.get_single_mut() {
+        cursor
     } else {
         error!("No image handle found for game cursor, expected to always find one");
         return;
@@ -211,9 +212,11 @@ fn cursor_mode(
     for enemy_pos in enemies_pos.iter() {
         if cursor_pos == *enemy_pos {
             *cursor_image = asset_server.load("Cursors_v2/Light/Arrows/Arrow4.png");
+            commands.entity(entity).insert(AttackCursor);
             return;
         }
     }
+    commands.entity(entity).remove::<AttackCursor>();
     *cursor_image = asset_server.load("Cursors_v2/Light/Arrows/Arrow1.png");
 }
 

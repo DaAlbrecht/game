@@ -99,11 +99,11 @@ fn patch_slime(
             Enemy::default(),
             Collider::default(),
             AttackRange::default(),
+            Health::default(),
         ));
 
         let healt_bar = commands
             .spawn((
-                Health::default(),
                 HealthBar,
                 MaterialMesh2dBundle {
                     mesh: Mesh2dHandle(meshes.add(Rectangle::new(10.0, 1.0))),
