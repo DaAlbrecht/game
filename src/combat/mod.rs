@@ -12,7 +12,7 @@ use crate::{
     input::PlayerInputAction,
     player::{Player, PlayerAction},
     ui::game_cursor::{AttackCursor, CursorPos},
-    AppState, ABILITY_Z_INDEX,
+    AppState, Health, ABILITY_Z_INDEX,
 };
 
 pub struct CombatPlugin;
@@ -22,9 +22,13 @@ impl Plugin for CombatPlugin {
         app.add_systems(
             Update,
             (fireball, move_fireball).run_if(in_state(AppState::InGame)),
-        );
+        )
+        .observe(on_target_hit);
     }
 }
+
+#[derive(Component)]
+struct Ability;
 
 #[derive(Component)]
 struct Fireball {
@@ -36,6 +40,13 @@ struct Target {
     pub origin_entity: Entity,
 }
 
+#[derive(Event)]
+struct HitEvent {
+    target: Entity,
+    origin: Entity,
+}
+
+//TODO: isntead of checking for enemies, we rather should use a 'target' component.
 fn fireball(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -71,7 +82,7 @@ fn fireball(
         let mut fireball_transform = *player_pos.single();
         fireball_transform.translation.z = ABILITY_Z_INDEX;
         let fireball_entity = commands
-            .spawn((Fireball { speed: 1.0 }, Name::new("Fireball")))
+            .spawn((Ability, Fireball { speed: 1.0 }, Name::new("Fireball")))
             .id();
 
         commands.entity(enemy_entity.unwrap()).insert(Target {
@@ -105,7 +116,10 @@ fn move_fireball(
                 let movement = direction * fire_ball.speed;
 
                 if distance < 1.0 {
-                    commands.entity(fireball_entity).despawn();
+                    commands.trigger(HitEvent {
+                        target: target.origin_entity,
+                        origin: fireball_entity,
+                    });
                     *player_action = PlayerAction::Idle;
                 } else {
                     transform.translation += movement;
@@ -113,4 +127,16 @@ fn move_fireball(
             }
         }
     }
+}
+
+fn on_target_hit(
+    trigger: Trigger<HitEvent>,
+    mut enemies_q: Query<&mut Health, With<Enemy>>,
+    mut commands: Commands,
+) {
+    let hit_event = trigger.event();
+    let mut target_health = enemies_q.get_mut(hit_event.target).unwrap();
+    // target_health.current_health -= 20;
+
+    commands.entity(hit_event.target).despawn();
 }
