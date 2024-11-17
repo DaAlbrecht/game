@@ -21,9 +21,12 @@ impl Plugin for EnemyPlugin {
                 show_healthbar,
                 handle_attacking_mark,
                 update_health_bar,
-                despawn_dead_enemies,
             )
                 .run_if(in_state(AppState::InGame)),
+        )
+        .add_systems(
+            PostUpdate,
+            despawn_dead_enemies.run_if(in_state(AppState::InGame)),
         )
         .register_type::<EnemyBehaviorState>()
         .register_type::<Health>()
@@ -189,7 +192,7 @@ fn update_health_bar(
 fn despawn_dead_enemies(mut commands: Commands, enemies_q: Query<(Entity, &Health), With<Enemy>>) {
     for (entity, health) in enemies_q.iter() {
         if health.current_health <= 0 {
-            commands.entity(entity).despawn();
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
