@@ -88,7 +88,7 @@ fn fireball(
     {
         *player_action = PlayerAction::Combat;
         let (player_entity, fireball_transform) = get_single!(player_q);
-        let mut fireball_transform = fireball_transform.clone();
+        let mut fireball_transform = *fireball_transform;
         fireball_transform.translation.z = ABILITY_Z_INDEX;
         let fireball_entity = commands
             .spawn((
