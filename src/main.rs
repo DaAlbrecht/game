@@ -9,6 +9,7 @@ use game::{
     enemy::{health_bar::HealthBarPlugin, slime::SlimePlugin, EnemyPlugin},
     events::EventsPlugin,
     grid::GridPlugin,
+    hubldtk::LtdkHubPlugin,
     input::InputPlugin,
     ldtk::LdtkAssetPlugin,
     player::PlayerPlugin,
@@ -24,6 +25,7 @@ fn main() {
         .init_state::<AppState>()
         .add_plugins(LdtkPlugin)
         .add_plugins(LdtkAssetPlugin)
+        .add_plugins(LtdkHubPlugin)
         .add_plugins(GridPlugin)
         .add_plugins(CameraPlugin {
             state: AppState::InGame,

@@ -8,6 +8,7 @@ pub mod combat;
 pub mod enemy;
 pub mod events;
 pub mod grid;
+pub mod hubldtk;
 pub mod input;
 pub mod ldtk;
 pub mod player;
@@ -146,8 +147,14 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     camera.projection.viewport_origin = Vec2::ZERO;
     commands.spawn((camera, MainCamera));
 
+    /* We need to spwan game.ldtk on demand
     commands.spawn(LdtkWorldBundle {
         ldtk_handle: asset_server.load("game.ldtk"),
+        ..Default::default()
+    });
+     */
+    commands.spawn(LdtkWorldBundle {
+        ldtk_handle: asset_server.load("hub.ldtk"),
         ..Default::default()
     });
 

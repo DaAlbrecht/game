@@ -36,7 +36,7 @@ pub struct Grid;
 pub struct LosGrid;
 
 #[derive(Default, Bundle, LdtkEntity)]
-struct PlayerBundle {
+pub struct PlayerBundle {
     player: Player,
     #[sprite_sheet_bundle]
     sprite_bundle: LdtkSpriteSheetBundle,
